@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#4A7C91" />
-  <title>Kidsneed – Kinder-Flipper (Sticker Pinball)</title>
+  <title>Kidsneed – Sticker Pinball (Improved)</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +14,6 @@
 
   <style>
     :root{
-      /* Kidsneed-ish calm premium */
       --bg:#F5F0E8;
       --card:#FFFFFF;
       --muted:#EDE8DC;
@@ -22,11 +21,11 @@
       --ink:#2D2A26;
       --ink2:#6B665C;
 
-      --accent:#4A7C91;     /* blau-grün */
-      --mint:#7BA08A;       /* ruhig */
-      --sun:#E8C547;        /* warmes gelb */
-      --coral:#E07A5F;      /* weich */
-      --violet:#7B6EA8;     /* leise */
+      --accent:#4A7C91;
+      --mint:#7BA08A;
+      --sun:#E8C547;
+      --coral:#E07A5F;
+      --violet:#7B6EA8;
 
       --r-lg:24px;
       --shadow:0 8px 24px rgba(45,42,38,.12);
@@ -65,7 +64,7 @@
     }
 
     .topbar{
-      height:78px;
+      height:84px;
       display:flex;
       align-items:center;
       justify-content:space-between;
@@ -75,7 +74,7 @@
       background:linear-gradient(180deg, rgba(255,255,255,1), rgba(237,232,220,.55));
     }
 
-    .title{display:flex; flex-direction:column; gap:4px; min-width:0;}
+    .title{display:flex; flex-direction:column; gap:6px; min-width:0;}
     .title b{
       font-size:18px; font-weight:900; letter-spacing:-.02em;
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -83,6 +82,25 @@
     .title small{
       font-weight:900; font-size:12px; letter-spacing:.10em;
       color:var(--ink2); text-transform:uppercase;
+    }
+
+    .progress{
+      width:200px;
+      max-width:32vw;
+      height:12px;
+      border:2px solid var(--ink);
+      border-radius:999px;
+      background:rgba(237,232,220,.8);
+      overflow:hidden;
+      box-shadow:0 1px 0 rgba(0,0,0,.06) inset;
+    }
+    .progress > i{
+      display:block;
+      height:100%;
+      width:0%;
+      background:var(--sun);
+      border-right:2px solid rgba(45,42,38,.25);
+      transition:width .18s ease;
     }
 
     .chips{
@@ -103,6 +121,7 @@
       color:var(--ink2); font-weight:900; font-size:12px; letter-spacing:.10em; text-transform:uppercase;
     }
     .pill b{font-size:14px;}
+
     .btn{
       border:2px solid var(--ink);
       background:var(--muted);
@@ -137,7 +156,27 @@
 
     /* Touch zones: links/rechts halten */
     .zones{position:absolute; inset:0; display:flex;}
-    .zone{flex:1; background:transparent; touch-action:none;}
+    .zone{flex:1; background:transparent; touch-action:none; position:relative;}
+    .zoneHint{
+      position:absolute;
+      bottom:14px;
+      left:14px;
+      right:14px;
+      padding:10px 12px;
+      border-radius:16px;
+      border:2px dashed rgba(45,42,38,.14);
+      background:rgba(237,232,220,.50);
+      color:rgba(107,102,92,.92);
+      font-weight:900;
+      font-size:12px;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      opacity:.0;
+      transition:opacity .2s ease;
+      pointer-events:none;
+    }
+    .zone.right .zoneHint{left:14px; right:14px;}
+    .showHints .zoneHint{opacity:.85;}
 
     .toast{
       position:absolute;
@@ -164,7 +203,7 @@
       padding:var(--s3);
     }
     .panel{
-      width:min(440px, 100%);
+      width:min(460px, 100%);
       background:var(--card);
       border:3px solid var(--ink);
       border-radius:var(--r-lg);
@@ -172,7 +211,7 @@
       padding:var(--s4);
     }
     .panel h2{margin:0 0 var(--s2); font-size:20px; font-weight:900;}
-    .panel p{margin:0 0 var(--s3); color:var(--ink2); font-weight:800; line-height:1.35;}
+    .panel p{margin:0 0 var(--s3); color:var(--ink2); font-weight:800; line-height:1.38;}
     .panel .row{display:flex; gap:var(--s2); justify-content:space-between; flex-wrap:wrap;}
     .hint{
       margin-top:12px;
@@ -192,16 +231,31 @@
     <div class="topbar">
       <div class="title">
         <b>Sticker-Pinball</b>
-        <small>Kinder-Flipper · ruhig & premium</small>
+        <small>Kinder-Flipper · verbessert</small>
+        <div class="progress" title="Sterne sammeln">
+          <i id="pbar"></i>
+        </div>
       </div>
 
       <div class="chips">
-        <div class="pill" title="Mission">
-          <span>⭐ Sterne</span><b id="stars">0</b><span>/</span><b id="goal">15</b>
+        <div class="pill" title="Sterne">
+          <span>⭐</span><b id="stars">0</b><span>/</span><b id="goal">15</b>
         </div>
-        <div class="pill" title="Bonus-Stufe"><span>Bonus</span><b id="bonus">0</b></div>
-        <div class="pill" title="Bälle"><span>❤</span><b id="lives">3</b></div>
-        <div class="pill" title="Punkte"><span>Score</span><b id="score">0</b></div>
+        <div class="pill" title="Kickback (1× pro Ball)">
+          <span>🛟</span><b id="kick">an</b>
+        </div>
+        <div class="pill" title="Bonus">
+          <span>Bonus</span><b id="bonus">0</b>
+        </div>
+        <div class="pill" title="Bälle">
+          <span>❤</span><b id="lives">3</b>
+        </div>
+        <div class="pill" title="Best">
+          <span>Best</span><b id="best">0</b>
+        </div>
+        <div class="pill" title="Score">
+          <span>Score</span><b id="score">0</b>
+        </div>
         <button class="btn" id="btnPause" title="Pause">⏸</button>
         <button class="btn" id="btnReset" title="Neu">↻</button>
       </div>
@@ -212,9 +266,13 @@
         <canvas id="cv"></canvas>
         <div class="toast" id="toast">Los geht’s!</div>
 
-        <div class="zones" aria-hidden="true">
-          <div class="zone" id="zl"></div>
-          <div class="zone" id="zr"></div>
+        <div class="zones showHints" id="zones" aria-hidden="true">
+          <div class="zone left" id="zl">
+            <div class="zoneHint">Links halten · Flipper</div>
+          </div>
+          <div class="zone right" id="zr">
+            <div class="zoneHint">Rechts halten · Flipper/Plunger</div>
+          </div>
         </div>
 
         <div class="overlay" id="over">
@@ -223,15 +281,18 @@
             <p id="overText">
               Steuerung:<br>
               <b>Links halten</b> = linker Flipper · <b>Rechts halten</b> = rechter Flipper / Plunger laden.<br>
-              Wenn der Ball im Plunger ist: <b>rechts halten</b> (laden) → <b>loslassen</b> (schießen).
+              Wenn der Ball im Plunger ist: <b>rechts halten</b> (laden) → <b>loslassen</b> (schießen).<br><br>
+              Tipp: Oben die 3 Rollovers einsammeln → mehr Sterne!
             </p>
             <div class="row">
               <button class="btn" id="overResume">Weiter</button>
               <button class="btn" id="overSound">Sound: An</button>
               <button class="btn" id="overEasy">Easy: An</button>
+              <button class="btn" id="overHints">Hints: Aus</button>
             </div>
             <div class="hint">
-              Ziel: Sammle ⭐ Sterne. Wenn du genug hast, gibt’s ein <b>Sticker-Feuerwerk</b> und Bonus-Punkte.
+              Ziel: Sammle ⭐ Sterne. Bei Ziel erreicht: <b>Sticker-Feuerwerk</b> + Bonus.
+              Kickback 🛟 rettet dich 1× pro Ball (Easy: öfter Bonus möglich).
             </div>
           </div>
         </div>
@@ -244,7 +305,7 @@
 (() => {
   "use strict";
 
-  // ===== Kinder-Settings (ruhig, fair, „nicht frustig“) =====
+  // ===== Settings (ruhig, fair, stabil) =====
   const CFG = {
     tableW: 400,
     tableH: 700,
@@ -253,7 +314,7 @@
     ballR: 9,
     gravity: 1180,
     damping: 0.996,
-    maxSpeed: 1500,
+    maxSpeed: 1550,
 
     wallRest: 0.93,
     bumperRest: 1.05,
@@ -275,25 +336,41 @@
 
     // kid-friendly pacing
     lives: 3,
-    ballSave: 1.6,     // more forgiving
+    ballSave: 1.6,     // forgiving
     easyMode: true,    // default ON
 
     // mission
-    starGoal: 15,
+    starGoalBase: 15,
+    starGoalStep: 2,
+    starGoalCap: 25,
 
     // scoring
-    hitScore: 15,
+    hitScore: 8,
     bumperScore: 40,
     slingScore: 10,
-    stickerBonusBase: 300,
+    rolloverScore: 60,
+    stickerBonusBase: 320,
+
+    // targets
+    targetRespawn: 2.0,     // seconds
+    rolloverCooldown: 0.8,
 
     // confetti
-    confettiCount: 18,
+    confettiCount: 20,
+
+    // kickback
+    kickbackVy: -980,
+    kickbackVx: 0,
+
+    // stability
+    stepHz: 120,
+    maxFrameDt: 0.05,
   };
 
   // DOM
   const cv = document.getElementById("cv");
   const boardEl = document.getElementById("board");
+  const zonesEl = document.getElementById("zones");
   const ctx = cv.getContext("2d");
 
   const elStars = document.getElementById("stars");
@@ -301,7 +378,10 @@
   const elBonus = document.getElementById("bonus");
   const elLives = document.getElementById("lives");
   const elScore = document.getElementById("score");
-  const toast = document.getElementById("toast");
+  const elBest  = document.getElementById("best");
+  const elKick  = document.getElementById("kick");
+  const pbar    = document.getElementById("pbar");
+  const toast   = document.getElementById("toast");
 
   const btnReset = document.getElementById("btnReset");
   const btnPause = document.getElementById("btnPause");
@@ -311,6 +391,7 @@
   const overResume = document.getElementById("overResume");
   const overSound = document.getElementById("overSound");
   const overEasy = document.getElementById("overEasy");
+  const overHints = document.getElementById("overHints");
 
   const zl = document.getElementById("zl");
   const zr = document.getElementById("zr");
@@ -323,7 +404,7 @@
     toast.textContent = txt;
     toast.classList.add("show");
     clearTimeout(showToast._t);
-    showToast._t = setTimeout(()=>toast.classList.remove("show"), 620);
+    showToast._t = setTimeout(()=>toast.classList.remove("show"), 650);
   }
 
   // ===== Responsive fit =====
@@ -367,19 +448,30 @@
     }catch(e){}
   }
 
+  // ===== localStorage best score =====
+  const BEST_KEY = "kidsneed_pinball_best_v1";
+  function loadBest(){
+    const v = Number(localStorage.getItem(BEST_KEY) || "0");
+    return Number.isFinite(v) ? v : 0;
+  }
+  function saveBest(v){
+    try{ localStorage.setItem(BEST_KEY, String(v|0)); }catch(e){}
+  }
+
   function updateOverlayButtons(){
     overSound.textContent = "Sound: " + (soundOn ? "An" : "Aus");
     overEasy.textContent  = "Easy: "  + (CFG.easyMode ? "An" : "Aus");
+    overHints.textContent = "Hints: " + (zonesEl.classList.contains("showHints") ? "Aus" : "An");
   }
 
-  // ===== Table geometry =====
-  let walls=[], slings=[], bumpers=[], stars=[], gates=[];
+  // ===== Geometry =====
+  let walls=[], slings=[], bumpers=[], targets=[], rollovers=[], gate=[];
   function seg(x1,y1,x2,y2){ return {x1,y1,x2,y2}; }
-  function circ(x,y,r, kind, data){ return {x,y,r, kind, data, glow:0}; }
+  function circ(x,y,r, kind, data){ return {x,y,r, kind, data, glow:0, cd:0}; }
 
   function buildTable(){
     const W=CFG.tableW, H=CFG.tableH;
-    walls=[]; slings=[]; bumpers=[]; stars=[]; gates=[];
+    walls=[]; slings=[]; bumpers=[]; targets=[]; rollovers=[]; gate=[];
 
     const pad=12;
     const left=pad, right=W-pad, top=pad, bot=H-pad;
@@ -388,7 +480,7 @@
     const drainGap = 140;
     const mid = W/2;
 
-    // outer walls (rounded feel via drawing; physics is segments)
+    // outer boundaries
     walls.push(
       seg(left, top, right, top),
       seg(left, top, left, bot-190),
@@ -400,10 +492,10 @@
     // plunger lane (open exit + guide)
     const plA = W*0.80;
     const plB = W*0.92;
-    walls.push(seg(plB, bot, plB, H*0.10));      // outer wall
-    walls.push(seg(plA, bot, plA, H*0.42));      // inner wall stops -> exit
-    walls.push(seg(W*0.16, H*0.14, W*0.72, H*0.14)); // top shelf (doesn't close lane)
-    walls.push(seg(plA, H*0.42, W*0.64, H*0.30));    // guide ramp
+    walls.push(seg(plB, bot, plB, H*0.10));
+    walls.push(seg(plA, bot, plA, H*0.42));
+    walls.push(seg(W*0.16, H*0.14, W*0.72, H*0.14));
+    walls.push(seg(plA, H*0.42, W*0.64, H*0.30));
 
     // gentle ramps
     walls.push(
@@ -411,7 +503,7 @@
       seg(W*0.82, H*0.48, W*0.60, H*0.58),
     );
 
-    // slings (kid-friendly: soft)
+    // slings
     slings.push(
       seg(W*0.20, H*0.70, W*0.34, H*0.80),
       seg(W*0.34, H*0.80, W*0.24, H*0.86),
@@ -422,25 +514,36 @@
       seg(W*0.76, H*0.86, W*0.80, H*0.70),
     );
 
-    // bumpers as “Sticker-Tiere”
+    // bumpers as “Sticker-Tiere” (mehr Variation)
     bumpers.push(
-      circ(W*0.42, H*0.22, 25, "bumper", {emoji:"🐻", color:"#7BA08A", star:1}),
-      circ(W*0.58, H*0.22, 25, "bumper", {emoji:"🐸", color:"#4A7C91", star:1}),
-      circ(W*0.50, H*0.33, 30, "bumper", {emoji:"🦊", color:"#E07A5F", star:2}),
+      circ(W*0.40, H*0.20, 24, "bumper", {emoji:"🐻", color:"#7BA08A", stars:1}),
+      circ(W*0.60, H*0.20, 24, "bumper", {emoji:"🐸", color:"#4A7C91", stars:1}),
+      circ(W*0.50, H*0.31, 30, "bumper", {emoji:"🦊", color:"#E07A5F", stars:2}),
+      circ(W*0.30, H*0.28, 18, "bumper", {emoji:"🐳", color:"#7B6EA8", stars:1}),
+      circ(W*0.70, H*0.28, 18, "bumper", {emoji:"🦋", color:"#E8C547", stars:1}),
     );
 
-    // star targets (collect)
-    stars.push(
-      circ(W*0.30, H*0.50, 13, "star", {emoji:"⭐", color:"#E8C547", star:1}),
-      circ(W*0.70, H*0.50, 13, "star", {emoji:"⭐", color:"#E8C547", star:1}),
-      circ(W*0.50, H*0.62, 13, "star", {emoji:"⭐", color:"#E8C547", star:1}),
+    // targets (respawn)
+    targets.push(
+      circ(W*0.30, H*0.52, 13, "target", {emoji:"⭐", color:"#E8C547", stars:1}),
+      circ(W*0.70, H*0.52, 13, "target", {emoji:"⭐", color:"#E8C547", stars:1}),
+      circ(W*0.50, H*0.62, 13, "target", {emoji:"⭐", color:"#E8C547", stars:1}),
+      circ(W*0.22, H*0.58, 11, "target", {emoji:"✨", color:"#E8C547", stars:1}),
+      circ(W*0.78, H*0.58, 11, "target", {emoji:"✨", color:"#E8C547", stars:1}),
     );
 
-    // gentle “gate” (bonus lane top)
-    gates.push(circ(W*0.86, H*0.18, 14, "gate", {emoji:"🌈", color:"#7B6EA8", star:3, cd:0.8, t:0}));
+    // rollovers (oben): wenn alle 3 -> extra Sterne + Bonus
+    rollovers.push(
+      circ(W*0.22, H*0.10, 10, "roll", {color:"#7BA08A", hit:false, t:0}),
+      circ(W*0.50, H*0.10, 10, "roll", {color:"#4A7C91", hit:false, t:0}),
+      circ(W*0.78, H*0.10, 10, "roll", {color:"#E07A5F", hit:false, t:0}),
+    );
+
+    // gate (bonus lane) with cooldown
+    gate.push(circ(W*0.86, H*0.18, 14, "gate", {emoji:"🌈", color:"#7B6EA8", stars:3, t:0, cd:0.9}));
   }
 
-  // ===== Physics helpers =====
+  // ===== Collision helpers =====
   function closestPoint(px,py, x1,y1,x2,y2){
     const dx=x2-x1, dy=y2-y1;
     const l2 = dx*dx+dy*dy || 1;
@@ -464,8 +567,8 @@
     const overlap = ball.r - dist;
     if(overlap > 0){
       const nx = dx/dist, ny = dy/dist;
-      ball.x += nx*(overlap+0.5);
-      ball.y += ny*(overlap+0.5);
+      ball.x += nx*(overlap+0.55);
+      ball.y += ny*(overlap+0.55);
       reflect(ball, nx, ny, rest);
       ball.vx *= boost; ball.vy *= boost;
       return true;
@@ -473,15 +576,15 @@
     return false;
   }
 
-  function collideCircle(ball, c, rest, kick=60){
+  function collideCircle(ball, c, rest, kick=55){
     const dx=ball.x-c.x, dy=ball.y-c.y;
     const dist = Math.sqrt(dx*dx+dy*dy) || 0.0001;
     const minD = ball.r + c.r;
     if(dist < minD){
       const nx = dx/dist, ny = dy/dist;
       const overlap = minD - dist;
-      ball.x += nx*(overlap+0.6);
-      ball.y += ny*(overlap+0.6);
+      ball.x += nx*(overlap+0.7);
+      ball.y += ny*(overlap+0.7);
       reflect(ball, nx, ny, rest);
       ball.vx += nx*kick;
       ball.vy += ny*kick;
@@ -490,7 +593,7 @@
     return false;
   }
 
-  // ===== Game state =====
+  // ===== State =====
   const ball = { x:0, y:0, vx:0, vy:0, r:CFG.ballR, inPlunger:true, saveT:0 };
   let plPower=0;
 
@@ -498,10 +601,18 @@
   const flR = { side:"R", px:CFG.tableW-170, py:CFG.tableH-60, len:CFG.flLen, ang:0, targ:0, av:0 };
 
   let holdL=false, holdR=false, prevHoldR=false;
+
   let score=0, lives=CFG.lives;
-  let starCount=0, bonusLevel=0;
+  let stars=0, bonus=0;
+  let best=loadBest();
   let paused=false;
+
   let confetti=[];
+  let kickbackReady=true;
+
+  function goalNow(){
+    return clamp(CFG.starGoalBase + bonus*CFG.starGoalStep, CFG.starGoalBase, CFG.starGoalCap);
+  }
 
   function resetBall(){
     ball.x = CFG.tableW-25;
@@ -510,68 +621,85 @@
     ball.inPlunger = true;
     ball.saveT = 0;
     plPower = 0;
+
+    // per-ball helper
+    kickbackReady = CFG.easyMode ? true : true;
+    rollovers.forEach(r => { r.data.hit=false; r.data.t=0; });
+
+    updateHUD();
   }
 
   function resetGame(){
     buildTable();
     score=0; lives=CFG.lives;
-    starCount=0; bonusLevel=0;
+    stars=0; bonus=0;
     confetti.length=0;
+    best = loadBest();
     resetBall();
-    updateHUD();
     showToast("⭐ Sammle Sterne!");
     beep(520,0.07,0.03,"sine");
   }
 
   function updateHUD(){
-    elStars.textContent = String(starCount);
-    elGoal.textContent = String(CFG.starGoal);
-    elBonus.textContent = String(bonusLevel);
+    const g = goalNow();
+    elStars.textContent = String(stars);
+    elGoal.textContent  = String(g);
+    elBonus.textContent = String(bonus);
     elLives.textContent = String(lives);
-    elScore.textContent = String(score);
+    elScore.textContent = String(score|0);
+    elBest.textContent  = String(best|0);
+    elKick.textContent  = kickbackReady ? "an" : "aus";
+
+    const pct = g>0 ? clamp((stars/g)*100, 0, 100) : 0;
+    pbar.style.width = pct.toFixed(1) + "%";
   }
 
-  function addStars(n, label){
-    starCount += n;
-    score += (n * 35) + (bonusLevel * 10);
+  function awardStars(n, label){
+    stars += n;
+    score += n*35 + bonus*10;
+
     if(label) showToast(label);
 
-    // Mission complete -> sticker bonus
-    if(starCount >= CFG.starGoal){
-      starCount = 0;
-      bonusLevel = Math.min(9, bonusLevel + 1);
-      score += CFG.stickerBonusBase + (bonusLevel * 120);
+    // mission complete
+    const g = goalNow();
+    if(stars >= g){
+      stars = 0;
+      bonus = Math.min(9, bonus+1);
+      score += CFG.stickerBonusBase + bonus*130;
       makeConfetti();
       showToast("🎉 Sticker-Bonus!");
       beep(760,0.08,0.05,"triangle");
       beep(920,0.07,0.045,"sine");
 
-      // kid-friendly: sometimes an extra ball
-      if(CFG.easyMode && bonusLevel % 3 === 0 && lives < 5){
+      if(CFG.easyMode && bonus % 3 === 0 && lives < 5){
         lives++;
         showToast("❤ Extra Ball!");
         beep(660,0.08,0.05,"sine");
       }
     }
+
+    if(score > best){
+      best = score|0;
+      saveBest(best);
+    }
     updateHUD();
   }
 
-  // ===== Confetti =====
   function makeConfetti(){
     confetti.length = 0;
     const colors = ["#4A7C91","#7BA08A","#E8C547","#E07A5F","#7B6EA8"];
     for(let i=0;i<CFG.confettiCount;i++){
       confetti.push({
-        x: CFG.tableW*0.50 + (Math.random()*40-20),
-        y: 80 + Math.random()*20,
-        vx: Math.random()*220 - 110,
-        vy: Math.random()*-220 - 90,
-        g: 520 + Math.random()*260,
+        x: CFG.tableW*0.50 + (Math.random()*50-25),
+        y: 76 + Math.random()*22,
+        vx: Math.random()*240 - 120,
+        vy: Math.random()*-240 - 100,
+        g: 540 + Math.random()*260,
         r: 4 + Math.random()*4,
         rot: Math.random()*Math.PI*2,
         vr: Math.random()*6 - 3,
         c: colors[i % colors.length],
-        t: 1.2 + Math.random()*0.6
+        t: 1.25 + Math.random()*0.7
       });
     }
   }
@@ -609,10 +737,18 @@
   overResume.addEventListener("click", ()=>togglePause(false));
   overSound.addEventListener("click", ()=>{ soundOn=!soundOn; updateOverlayButtons(); beep(420,0.05,0.03); });
   overEasy.addEventListener("click", ()=>{ CFG.easyMode=!CFG.easyMode; updateOverlayButtons(); showToast(CFG.easyMode ? "Easy an" : "Easy aus"); });
+  overHints.addEventListener("click", ()=>{
+    zonesEl.classList.toggle("showHints");
+    updateOverlayButtons();
+    showToast(zonesEl.classList.contains("showHints") ? "Hints an" : "Hints aus");
+  });
   btnReset.addEventListener("click", ()=>{ togglePause(false); resetGame(); });
 
   // prevent iOS scroll
   document.addEventListener("touchmove", (e)=>e.preventDefault(), {passive:false});
+
+  // auto-hide hints after a bit
+  setTimeout(()=>zonesEl.classList.remove("showHints"), 4000);
 
   // ===== Flippers =====
   function flipperEndpoints(f){
@@ -644,32 +780,85 @@
     if(plPower < CFG.plMin) return;
 
     ball.inPlunger = false;
-
-    // kid-friendly: always enters the field reliably
     ball.vx = -55 + (Math.random()*18 - 9);
     ball.vy = -plPower;
-
-    // nudge into playfield
-    ball.x = CFG.tableW * 0.78;
+    ball.x  = CFG.tableW * 0.78; // reliable exit
     ball.saveT = CFG.ballSave;
 
     plPower = 0;
     beep(520,0.06,0.03,"sine");
   }
 
+  // ===== Draw helpers =====
+  function drawStickerCircle(c, withBorder=true){
+    const color = c.data?.color || "#4A7C91";
+    const glow = c.glow || 0;
+
+    // glow ring
+    ctx.save();
+    ctx.globalAlpha = 0.10 + 0.18*glow;
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(c.x,c.y,c.r+10,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // sticker body (disabled -> greyed)
+    const active = !c.data?.inactive;
+    ctx.fillStyle = active ? "rgba(255,255,255,0.94)" : "rgba(255,255,255,0.60)";
+    ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2); ctx.fill();
+
+    if(withBorder){
+      ctx.lineWidth=2;
+      ctx.strokeStyle="rgba(45,42,38,0.18)";
+      ctx.stroke();
+    }
+
+    // emoji
+    const em = c.data?.emoji || "";
+    if(em){
+      ctx.save();
+      ctx.font = `${Math.max(14, c.r)}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
+      ctx.textAlign="center";
+      ctx.textBaseline="middle";
+      ctx.globalAlpha = active ? 1 : 0.55;
+      ctx.fillText(em, c.x, c.y+1);
+      ctx.restore();
+    }
+  }
+
+  function drawFlipper(f){
+    const e = flipperEndpoints(f);
+    ctx.lineCap="round";
+    ctx.lineWidth = CFG.flWidth;
+    ctx.strokeStyle="rgba(45,42,38,0.34)";
+    ctx.beginPath(); ctx.moveTo(e.x1,e.y1); ctx.lineTo(e.x2,e.y2); ctx.stroke();
+
+    ctx.lineWidth = Math.max(4, CFG.flWidth-6);
+    ctx.strokeStyle="rgba(123,160,138,0.70)";
+    ctx.beginPath(); ctx.moveTo(e.x1,e.y1); ctx.lineTo(e.x2,e.y2); ctx.stroke();
+  }
+
   // ===== Fixed timestep loop =====
   let last = performance.now();
   let acc = 0;
-  const STEP = 1/120;
+  const STEP = 1/CFG.stepHz;
 
-  function physicsStep(dt){
+  function physicsSubstep(dt){
     if(paused) return;
 
     updateFlippers(dt);
 
-    // update gate cooldowns
-    for(const g of gates){
+    // cooldowns
+    for(const r of rollovers){
+      r.data.t = Math.max(0, r.data.t - dt);
+    }
+    for(const g of gate){
       g.data.t = Math.max(0, g.data.t - dt);
+    }
+    for(const t of targets){
+      t.cd = Math.max(0, t.cd - dt);
+      if(t.cd === 0 && t.data.inactive){
+        t.data.inactive = false;
+      }
     }
 
     // plunger: hold right to charge, release to shoot
@@ -700,7 +889,7 @@
 
     // speed cap
     const sp = hypot(ball.vx,ball.vy);
-    const cap = CFG.easyMode ? (CFG.maxSpeed*0.90) : CFG.maxSpeed;
+    const cap = CFG.easyMode ? (CFG.maxSpeed*0.92) : CFG.maxSpeed;
     if(sp > cap){
       const s = cap/sp;
       ball.vx *= s; ball.vy *= s;
@@ -709,7 +898,7 @@
     // collisions: walls
     for(const w of walls){
       if(collideSegment(ball, w, CFG.wallRest, 1)) {
-        score += CFG.hitScore + Math.min(20, bonusLevel*2);
+        score += CFG.hitScore + Math.min(20, bonus*2);
       }
     }
 
@@ -717,7 +906,7 @@
     for(const s of slings){
       if(collideSegment(ball, s, CFG.slingRest, 1.01)){
         score += CFG.slingScore;
-        beep(420,0.04,0.02,"triangle");
+        beep(420,0.04,0.018,"triangle");
       }
     }
 
@@ -732,42 +921,73 @@
           ball.vx += Math.cos(f.ang) * punch;
           ball.vy += Math.sin(f.ang) * punch;
         }
-        beep(520,0.035,0.015,"sine");
+        beep(520,0.035,0.012,"sine");
       }
     }
 
     // bumpers
     for(const b of bumpers){
-      if(collideCircle(ball, b, CFG.bumperRest, CFG.easyMode ? 55 : 70)){
+      if(collideCircle(ball, b, CFG.bumperRest, CFG.easyMode ? 52 : 68)){
         b.glow = 1;
-        score += CFG.bumperScore + bonusLevel*5;
-        addStars(b.data.star, b.data.emoji + " +" + b.data.star);
+        score += CFG.bumperScore + bonus*6;
+        awardStars(b.data.stars, `${b.data.emoji} +${b.data.stars}`);
         beep(660,0.06,0.03,"sine");
       }
       b.glow = Math.max(0, b.glow - 3*dt);
     }
 
-    // star targets (smaller, gentle, give stars)
-    for(const s of stars){
-      if(collideCircle(ball, s, 1.02, 40)){
-        s.glow = 1;
-        addStars(s.data.star, "⭐ +" + s.data.star);
-        beep(740,0.05,0.025,"triangle");
+    // targets (respawn): only if active
+    for(const t of targets){
+      if(t.data.inactive) continue;
+      if(collideCircle(ball, t, 1.02, 40)){
+        t.glow = 1;
+        t.data.inactive = true;
+        t.cd = CFG.targetRespawn;
+        awardStars(t.data.stars, `${t.data.emoji} +${t.data.stars}`);
+        score += 30 + bonus*10;
+        beep(740,0.05,0.022,"triangle");
       }
-      s.glow = Math.max(0, s.glow - 4*dt);
+      t.glow = Math.max(0, t.glow - 4*dt);
     }
 
-    // gate (cooldown)
-    for(const g of gates){
+    // rollovers: top lanes
+    for(const r of rollovers){
+      if(r.data.t > 0) continue;
+      const dx=ball.x-r.x, dy=ball.y-r.y;
+      const rr=(ball.r+r.r);
+      if(dx*dx+dy*dy <= rr*rr){
+        r.data.t = CFG.rolloverCooldown;
+        if(!r.data.hit){
+          r.data.hit = true;
+          awardStars(1, "Rollover +1");
+          score += CFG.rolloverScore + bonus*15;
+          beep(820,0.05,0.02,"sine");
+
+          // all 3 -> extra
+          if(rollovers.every(x=>x.data.hit)){
+            rollovers.forEach(x=>x.data.hit=false);
+            awardStars(3, "🎯 Alle Rollovers!");
+            score += 240 + bonus*40;
+            makeConfetti();
+            beep(920,0.06,0.03,"triangle");
+          }
+        } else {
+          score += 10;
+        }
+      }
+    }
+
+    // gate: cooldown
+    for(const g of gate){
       if(g.data.t > 0) continue;
       const dx=ball.x-g.x, dy=ball.y-g.y;
       const rr=(ball.r+g.r);
       if(dx*dx+dy*dy <= rr*rr){
         g.data.t = g.data.cd;
         g.glow = 1;
-        addStars(g.data.star, g.data.emoji + " +" + g.data.star);
-        score += 120 + bonusLevel*20;
-        beep(820,0.07,0.03,"sine");
+        awardStars(g.data.stars, `${g.data.emoji} +${g.data.stars}`);
+        score += 120 + bonus*20;
+        beep(860,0.07,0.03,"sine");
       }
       g.glow = Math.max(0, g.glow - 3*dt);
     }
@@ -775,18 +995,30 @@
     // ball save
     if(ball.saveT > 0) ball.saveT = Math.max(0, ball.saveT - dt);
 
+    // kickback zone: left outlane rescue (1× pro ball)
+    // (simple & robust: region check near bottom left side)
+    if(kickbackReady && ball.y > CFG.tableH-170 && ball.x < (CFG.tableW*0.26)){
+      kickbackReady = false;
+      ball.x = CFG.tableW*0.30;
+      ball.y = CFG.tableH*0.78;
+      ball.vx = CFG.kickbackVx;
+      ball.vy = CFG.kickbackVy * (CFG.easyMode ? 1.0 : 0.92);
+      ball.saveT = Math.max(ball.saveT, 0.7);
+      showToast("🛟 Kickback!");
+      beep(520,0.06,0.03,"triangle");
+      updateHUD();
+    }
+
     // drain
     if(ball.y > CFG.tableH + 55){
       if(ball.saveT > 0){
         resetBall();
         showToast("🛟 Ball Save!");
         beep(520,0.06,0.03,"sine");
-        updateHUD();
         return;
       }
-      lives--;
-      updateHUD();
 
+      lives--;
       if(lives > 0){
         resetBall();
         showToast("❤ Weiter!");
@@ -795,10 +1027,11 @@
         paused = true;
         over.style.display = "flex";
         overTitle.textContent = "Spiel vorbei";
+        showToast("Spiel vorbei");
       }
+      updateHUD();
+      return;
     }
-
-    updateHUD();
 
     // confetti physics
     if(confetti.length){
@@ -811,9 +1044,23 @@
       }
       confetti = confetti.filter(p => p.t > 0 && p.y < CFG.tableH+80);
     }
+
+    // best score
+    if(score > best){
+      best = score|0;
+      saveBest(best);
+    }
+    updateHUD();
   }
 
-  // ===== Draw =====
+  function physicsStep(dt){
+    // dynamic substeps when fast -> fewer tunneling/sticking issues
+    const sp = hypot(ball.vx, ball.vy);
+    const n = sp > 1050 ? 2 : 1;
+    const sub = dt / n;
+    for(let i=0;i<n;i++) physicsSubstep(sub);
+  }
+
   function draw(){
     ctx.setTransform(1,0,0,1,0,0);
     ctx.clearRect(0,0,pxW,pxH);
@@ -827,7 +1074,7 @@
     ctx.fillStyle = bg;
     ctx.fillRect(0,0,CFG.tableW,CFG.tableH);
 
-    // playful dots (very subtle)
+    // soft dots
     ctx.save();
     ctx.globalAlpha = 0.06;
     ctx.fillStyle = "rgba(45,42,38,1)";
@@ -840,13 +1087,12 @@
     }
     ctx.restore();
 
-    // draw “wood-ish” rails (visual only)
+    // rail (visual)
     ctx.save();
     ctx.globalAlpha = 0.12;
     ctx.strokeStyle = "rgba(45,42,38,1)";
     ctx.lineWidth = 18;
     ctx.lineCap="round";
-    // approximate outer rail (visual)
     ctx.beginPath();
     ctx.moveTo(14, 18);
     ctx.lineTo(CFG.tableW-14, 18);
@@ -866,30 +1112,45 @@
       ctx.beginPath(); ctx.moveTo(w.x1,w.y1); ctx.lineTo(w.x2,w.y2); ctx.stroke();
     }
 
-    // slings (mint)
+    // slings
     ctx.strokeStyle="rgba(123,160,138,0.40)";
     ctx.lineWidth=6;
     for(const s of slings){
       ctx.beginPath(); ctx.moveTo(s.x1,s.y1); ctx.lineTo(s.x2,s.y2); ctx.stroke();
     }
 
-    // gate + stars + bumpers as stickers
-    drawStickerCircles(gates, true);
-    drawStickerCircles(stars, false);
-    drawStickerCircles(bumpers, true);
+    // rollovers (visual)
+    for(const r of rollovers){
+      r.glow = r.data.hit ? 1 : 0;
+      ctx.save();
+      ctx.globalAlpha = 0.15 + (r.data.hit ? 0.20 : 0);
+      ctx.fillStyle = r.data.color;
+      ctx.beginPath(); ctx.arc(r.x,r.y,r.r+7,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,Math.PI*2); ctx.fill();
+      ctx.lineWidth=2;
+      ctx.strokeStyle="rgba(45,42,38,0.16)";
+      ctx.stroke();
+    }
+
+    // gate/targets/bumpers
+    gate.forEach(g => drawStickerCircle(g, true));
+    targets.forEach(t => drawStickerCircle(t, false));
+    bumpers.forEach(b => drawStickerCircle(b, true));
 
     // flippers
     drawFlipper(flL);
     drawFlipper(flR);
 
-    // plunger lane highlight
+    // plunger lane hint + meter
     ctx.save();
     ctx.globalAlpha=0.10;
     ctx.fillStyle="rgba(74,124,145,1)";
     ctx.fillRect(CFG.tableW*0.80, CFG.tableH*0.52, (CFG.tableW*0.92-CFG.tableW*0.80), CFG.tableH*0.38);
     ctx.restore();
 
-    // plunger bar
     if(ball.inPlunger && plPower>0){
       const frac = clamp(plPower/CFG.plungerMax,0,1);
       ctx.save();
@@ -899,12 +1160,28 @@
       ctx.fillRect(CFG.tableW-10, CFG.tableH-55-h, 6, h);
       ctx.restore();
 
-      // tiny hint icon
       ctx.save();
-      ctx.globalAlpha=0.9;
+      ctx.globalAlpha=0.85;
       ctx.font="900 12px Nunito";
-      ctx.fillStyle="rgba(45,42,38,0.65)";
-      ctx.fillText("HALTEN", CFG.tableW-86, CFG.tableH-80-h*0.4);
+      ctx.fillStyle="rgba(45,42,38,0.60)";
+      ctx.fillText("HALTEN → LOS", CFG.tableW-118, CFG.tableH-86-h*0.25);
+      ctx.restore();
+    }
+
+    // kickback hint (visual)
+    if(kickbackReady){
+      ctx.save();
+      ctx.globalAlpha=0.18;
+      ctx.fillStyle="rgba(232,197,71,1)";
+      ctx.beginPath();
+      ctx.roundRect(12, CFG.tableH-160, 74, 42, 12);
+      ctx.fill();
+      ctx.globalAlpha=0.82;
+      ctx.font="900 14px Nunito";
+      ctx.fillStyle="rgba(45,42,38,0.78)";
+      ctx.fillText("🛟", 32, CFG.tableH-134);
+      ctx.font="900 10px Nunito";
+      ctx.fillText("KICKBACK", 18, CFG.tableH-120);
       ctx.restore();
     }
 
@@ -939,61 +1216,9 @@
     }
   }
 
-  function drawStickerCircles(arr, withBorder){
-    for(const c of arr){
-      const glow = c.glow || 0;
-      const color = (c.data && c.data.color) ? c.data.color : "#4A7C91";
-
-      // glow ring
-      ctx.save();
-      ctx.globalAlpha = 0.10 + 0.18*glow;
-      ctx.fillStyle = color;
-      ctx.beginPath(); ctx.arc(c.x,c.y,c.r+10,0,Math.PI*2); ctx.fill();
-      ctx.restore();
-
-      // sticker body
-      ctx.fillStyle="rgba(255,255,255,0.94)";
-      ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2); ctx.fill();
-
-      if(withBorder){
-        ctx.lineWidth=2;
-        ctx.strokeStyle="rgba(45,42,38,0.18)";
-        ctx.stroke();
-      }
-
-      // emoji
-      const em = c.data?.emoji || "";
-      if(em){
-        ctx.save();
-        ctx.font = `900 ${Math.max(12, c.r)}px Nunito`;
-        // emoji sizes behave better with normal font
-        ctx.font = `${Math.max(14, c.r)}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
-        ctx.textAlign="center";
-        ctx.textBaseline="middle";
-        ctx.fillText(em, c.x, c.y+1);
-        ctx.restore();
-      }
-    }
-  }
-
-  function drawFlipper(f){
-    const e = flipperEndpoints(f);
-    ctx.lineCap="round";
-
-    // base
-    ctx.lineWidth = CFG.flWidth;
-    ctx.strokeStyle="rgba(45,42,38,0.34)";
-    ctx.beginPath(); ctx.moveTo(e.x1,e.y1); ctx.lineTo(e.x2,e.y2); ctx.stroke();
-
-    // highlight tint
-    ctx.lineWidth = Math.max(4, CFG.flWidth-6);
-    ctx.strokeStyle="rgba(123,160,138,0.70)"; /* mint */
-    ctx.beginPath(); ctx.moveTo(e.x1,e.y1); ctx.lineTo(e.x2,e.y2); ctx.stroke();
-  }
-
   // ===== Main loop =====
   function loop(now){
-    const dt = Math.min(0.05, (now-last)/1000);
+    const dt = Math.min(CFG.maxFrameDt, (now-last)/1000);
     last = now;
 
     acc += dt;
