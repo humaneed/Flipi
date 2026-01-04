@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <meta name="theme-color" content="#4A7C91" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>Kidsneed – Premium Flipper (v0.1)</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      /* === Kidsneed-ish Tokens (du kannst sie 1:1 aus deinem Homescreen ersetzen) === */
+      --bg:#F5F0E8;
+      --panel:#FFFFFF;
+      --ink:#1E2326;
+      --muted:#6B7280;
+      --accent:#4A7C91;
+
+      --radius-sm:12px;
+      --radius-md:16px;
+      --radius-lg:24px;
+
+      --shadow-soft:0 8px 24px rgba(20,18,16,.10);
+      --shadow-subtle:0 2px 10px rgba(20,18,16,.08);
+
+      --s1:8px; --s2:12px; --s3:16px; --s4:20px; --s5:24px;
+    }
+
+    html,body{height:100%; margin:0; font-family:Nunito, system-ui, -apple-system, Segoe UI, Roboto, Arial;}
+    body{
+      background:var(--bg);
+      color:var(--ink);
+      overscroll-behavior:none;
+      touch-action:none;
+    }
+
+    .app{
+      position:fixed; inset:0;
+      display:flex; flex-direction:column;
+      padding:calc(env(safe-area-inset-top) + var(--s3)) var(--s3) calc(env(safe-area-inset-bottom) + var(--s3));
+      gap:var(--s3);
+      box-sizing:border-box;
+    }
+
+    .topbar{
+      background:rgba(255,255,255,.78);
+      backdrop-filter: blur(10px);
+      border-radius:var(--radius-lg);
+      box-shadow:var(--shadow-subtle);
+      padding:var(--s3);
+      display:flex; align-items:center; justify-content:space-between;
+      gap:var(--s3);
+    }
+
+    .chip{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:10px 12px;
+      border-radius:999px;
+      background:rgba(0,0,0,.04);
+      font-weight:900;
+      letter-spacing:.2px;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .chip small{font-weight:800; color:var(--muted); letter-spacing:0; }
+    .btn{
+      border:0;
+      border-radius:999px;
+      padding:10px 14px;
+      font-weight:900;
+      background:rgba(0,0,0,.06);
+      color:var(--ink);
+      cursor:pointer;
+    }
+    .btn:active{transform:translateY(1px);}
+
+    .stage{
+      position:relative;
+      flex:1;
+      border-radius:var(--radius-lg);
+      background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.72));
+      box-shadow:var(--shadow-soft);
+      overflow:hidden;
+    }
+
+    canvas{
+      width:100%; height:100%;
+      display:block;
+      touch-action:none;
+    }
+
+    .hud{
+      display:flex;
+      gap:var(--s3);
+      justify-content:space-between;
+      align-items:center;
+      background:rgba(255,255,255,.78);
+      backdrop-filter: blur(10px);
+      border-radius:var(--radius-lg);
+      box-shadow:var(--shadow-subtle);
+      padding:var(--s3);
+      user-select:none;
+    }
+
+    .hint{
+      color:var(--muted);
+      font-size:13px;
+      font-weight:800;
+    }
+
+    /* Touch zones (unsichtbar, aber hilfreich für 1-Hand) */
+    .touchZones{
+      position:absolute; inset:0;
+      display:flex;
+      pointer-events:none; /* aktivieren wir per JS, damit Buttons oben funktionieren */
+    }
+    .zone{
+      flex:1;
+      pointer-events:auto;
+      background:transparent;
+    }
+
+    /* Mini toast */
+    .toast{
+      position:absolute;
+      left:50%;
+      top:12px;
+      transform:translateX(-50%);
+      background:rgba(30,35,38,.88);
+      color:white;
+      border-radius:999px;
+      padding:10px 14px;
+      font-weight:900;
+      font-size:14px;
+      opacity:0;
+      transition:opacity .18s ease, transform .18s ease;
+      pointer-events:none;
+      box-shadow:0 10px 30px rgba(0,0,0,.18);
+      letter-spacing:.2px;
+    }
+    .toast.show{
+      opacity:1;
+      transform:translateX(-50%) translateY(2px);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <button class="btn" id="backBtn" title="Zurück">←</button>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; flex:1;">
+        <div class="chip"><small>Ziel</small> <span id="targetLbl">10</span></div>
+        <div class="chip"><small>Summe</small> <span id="sumLbl">0</span></div>
+        <div class="chip"><small>x</small> <span id="multLbl">1</span></div>
+      </div>
+
+      <button class="btn" id="resetBtn" title="Neu">↻</button>
+    </div>
+
+    <div class="stage" id="stage">
+      <canvas id="c"></canvas>
+      <div class="toast" id="toast">JACKPOT!</div>
+      <div class="touchZones" id="zones" aria-hidden="true">
+        <div class="zone" id="zoneL"></div>
+        <div class="zone" id="zoneR"></div>
+      </div>
+    </div>
+
+    <div class="hud">
+      <div>
+        <div style="font-weight:900; font-size:18px;">Punkte: <span id="scoreLbl">0</span></div>
+        <div class="hint" id="hintLbl">Links/Rechts halten = Flipper • Rechts halten im Plunger = Laden</div>
+      </div>
+      <div class="chip">❤ <span id="livesLbl">3</span></div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ====== CONFIG (hier diversifizierst du später) ======
+  const CONFIG = {
+    targetValues: [10],             // später: [10,12,15,20] etc.
+    bumperValues: [1,2,3],          // Werte der 3 Bumper
+    gravity: 900,                   // px/s^2
+    damping: 0.995,                 // Reibung pro Tick
+    restitution: 0.92,              // Bounciness an Wänden
+    maxSpeed: 1600,
+    ballRadius: 10,
+    lives: 3,
+
+    flipperLength: 92,
+    flipperWidth: 12,
+    flipperSpeed: 18,               // höher = snappier
+    flipperRestAngle: 0.55,         // rad
+    flipperUpAngle: -0.65,          // rad
+
+    // Plunger
+    plungerChargeRate: 950,         // power/s
+    plungerMax: 1400,               // max power
+
+    // Smart rules
+    jackpotBonus: 700,
+    baseHitScore: 40,
+    softBust: true,                 // Summe > Ziel => Ziel-1
+  };
+
+  // ====== DOM ======
+  const canvas = document.getElementById("c");
+  const stage  = document.getElementById("stage");
+  const zones  = document.getElementById("zones");
+  const zoneL  = document.getElementById("zoneL");
+  const zoneR  = document.getElementById("zoneR");
+
+  const targetLbl = document.getElementById("targetLbl");
+  const sumLbl    = document.getElementById("sumLbl");
+  const multLbl   = document.getElementById("multLbl");
+  const scoreLbl  = document.getElementById("scoreLbl");
+  const livesLbl  = document.getElementById("livesLbl");
+  const toast     = document.getElementById("toast");
+  const hintLbl   = document.getElementById("hintLbl");
+
+  document.getElementById("backBtn").onclick = () => history.back();
+  document.getElementById("resetBtn").onclick = () => resetAll();
+
+  // Damit Touch-Zonen nicht Buttons blocken:
+  zones.style.pointerEvents = "auto";
+
+  // ====== Canvas sizing ======
+  const ctx = canvas.getContext("2d");
+  let W=0, H=0, DPR=1;
+
+  function resize(){
+    const r = stage.getBoundingClientRect();
+    DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    W = Math.floor(r.width * DPR);
+    H = Math.floor(r.height * DPR);
+    canvas.width = W;
+    canvas.height = H;
+  }
+  window.addEventListener("resize", resize, {passive:true});
+  resize();
+
+  // ====== Game state ======
+  let score = 0;
+  let mult  = 1;
+  let sum   = 0;
+  let lives = CONFIG.lives;
+  let targetIndex = 0;
+  let target = CONFIG.targetValues[targetIndex];
+
+  // Board dimensions in "world units" == canvas pixels
+  const board = {
+    pad: 26*DPR,
+    drainY: () => H + 80*DPR
+  };
+
+  // Ball
+  const ball = {
+    x: W*0.84, y: H*0.86,
+    vx: 0, vy: 0,
+    r: CONFIG.ballRadius * DPR,
+    inPlunger: true
+  };
+
+  // Plunger state
+  let plungerPower = 0;
+  let holdingRight = false;
+  let holdingLeft  = false;
+
+  // Flippers (simple rotating segments)
+  function makeFlipper(side){
+    const isL = side === "L";
+    const pivotX = isL ? W*0.33 : W*0.67;
+    const pivotY = H*0.86;
+    return {
+      side,
+      px: pivotX, py: pivotY,
+      angle: isL ? -CONFIG.flipperRestAngle : Math.PI + CONFIG.flipperRestAngle,
+      angVel: 0,
+      targetAngle: isL ? -CONFIG.flipperRestAngle : Math.PI + CONFIG.flipperRestAngle,
+      len: CONFIG.flipperLength * DPR,
+    };
+  }
+  const flL = makeFlipper("L");
+  const flR = makeFlipper("R");
+
+  // Bumpers
+  const bumpers = [
+    {x: W*0.42, y: H*0.22, r: 26*DPR, v: CONFIG.bumperValues[0]},
+    {x: W*0.58, y: H*0.22, r: 26*DPR, v: CONFIG.bumperValues[1]},
+    {x: W*0.50, y: H*0.33, r: 28*DPR, v: CONFIG.bumperValues[2]},
+  ];
+
+  // Walls (segments) – minimal layout
+  // Each wall: {ax,ay,bx,by}
+  function buildWalls(){
+    const p = 22*DPR;
+    const left  = board.pad;
+    const right = W - board.pad;
+    const top   = board.pad;
+    const bottom= H - board.pad;
+
+    // Outer frame with a bottom gap (drain)
+    const drainGap = 120*DPR;
+    const mid = W/2;
+
+    // Simple ramps near flippers
+    return [
+      // Left outer
+      {ax:left, ay:top, bx:left, by:bottom-180*DPR},
+      // Left upper slope
+      {ax:left, ay:top, bx:left+120*DPR, by:top},
+      // Right outer
+      {ax:right, ay:top, bx:right, by:bottom-180*DPR},
+      // Right upper slope
+      {ax:right-120*DPR, ay:top, bx:right, by:top},
+
+      // Bottom left to drain
+      {ax:left, ay:bottom-180*DPR, bx:mid - drainGap/2, by:bottom},
+      // Bottom right to drain
+      {ax:mid + drainGap/2, ay:bottom, bx:right, by:bottom-180*DPR},
+
+      // Inner guide walls (plunger lane)
+      {ax:W*0.80, ay:bottom, bx:W*0.80, by:H*0.50},
+      {ax:W*0.92, ay:bottom, bx:W*0.92, by:H*0.14},
+
+      // Small upper “shelf”
+      {ax:W*0.20, ay:H*0.14, bx:W*0.80, by:H*0.14},
+
+      // Two simple mid slants (adds pinball feel)
+      {ax:W*0.22, ay:H*0.48, bx:W*0.40, by:H*0.56},
+      {ax:W*0.78, ay:H*0.48, bx:W*0.60, by:H*0.56},
+    ];
+  }
+  let walls = buildWalls();
+
+  // ====== Math helpers ======
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+  function len2(x,y){ return x*x+y*y; }
+  function hypot(x,y){ return Math.sqrt(x*x+y*y); }
+
+  function closestPointOnSegment(px,py, ax,ay, bx,by){
+    const abx = bx-ax, aby = by-ay;
+    const apx = px-ax, apy = py-ay;
+    const ab2 = abx*abx + aby*aby || 1;
+    const t = clamp((apx*abx + apy*aby)/ab2, 0, 1);
+    return { x: ax + abx*t, y: ay + aby*t, t };
+  }
+
+  function reflectVelocity(vx,vy, nx,ny, restitution){
+    // Reflect v around normal n
+    const dot = vx*nx + vy*ny;
+    return {
+      vx: vx - (1+restitution)*dot*nx,
+      vy: vy - (1+restitution)*dot*ny
+    };
+  }
+
+  // ====== Smart rules ======
+  function setTarget(i){
+    targetIndex = i % CONFIG.targetValues.length;
+    target = CONFIG.targetValues[targetIndex];
+    targetLbl.textContent = String(target);
+  }
+
+  function addChip(v){
+    sum += v;
+    if (sum === target){
+      score += CONFIG.jackpotBonus * mult;
+      mult = clamp(mult + 1, 1, 5);
+      showToast("JACKPOT!");
+      sum = 0;
+      haptic();
+    } else if (sum > target){
+      if (CONFIG.softBust){
+        sum = Math.max(0, target - 1);
+      } else {
+        sum = 0;
+      }
+      mult = clamp(mult - 1, 1, 5);
+      showToast("Oops…");
+    }
+    sumLbl.textContent = String(sum);
+    multLbl.textContent = String(mult);
+  }
+
+  function addScore(v){
+    score += v;
+    scoreLbl.textContent = String(score);
+  }
+
+  function showToast(text){
+    toast.textContent = text;
+    toast.classList.add("show");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=>toast.classList.remove("show"), 520);
+  }
+
+  function haptic(){
+    if (navigator.vibrate) navigator.vibrate(12);
+  }
+
+  // ====== Reset ======
+  function resetBall(){
+    ball.x = W*0.86;
+    ball.y = H*0.86;
+    ball.vx = 0;
+    ball.vy = 0;
+    ball.inPlunger = true;
+    plungerPower = 0;
+  }
+
+  function resetAll(){
+    score = 0; mult = 1; sum = 0; lives = CONFIG.lives;
+    setTarget(0);
+    scoreLbl.textContent = "0";
+    multLbl.textContent = "1";
+    sumLbl.textContent = "0";
+    livesLbl.textContent = String(lives);
+    resetBall();
+    showToast("Neu gestartet");
+  }
+
+  // ====== Input ======
+  function setLeft(on){ holdingLeft = on; }
+  function setRight(on){ holdingRight = on; }
+
+  function bindZone(zone, setter){
+    const onDown = (e)=>{ e.preventDefault(); setter(true); };
+    const onUp   = (e)=>{ e.preventDefault(); setter(false); };
+    zone.addEventListener("pointerdown", onDown);
+    zone.addEventListener("pointerup", onUp);
+    zone.addEventListener("pointercancel", onUp);
+    zone.addEventListener("pointerleave", onUp);
+  }
+  bindZone(zoneL, setLeft);
+  bindZone(zoneR, setRight);
+
+  // Prevent scroll on iOS
+  document.addEventListener("touchmove", (e)=>e.preventDefault(), {passive:false});
+
+  // ====== Flipper update ======
+  function updateFlipper(f, dt){
+    const isL = f.side === "L";
+    const rest = isL ? -CONFIG.flipperRestAngle : Math.PI + CONFIG.flipperRestAngle;
+    const up   = isL ? -CONFIG.flipperUpAngle   : Math.PI + CONFIG.flipperUpAngle;
+
+    const wantUp = isL ? holdingLeft : holdingRight;
+    f.targetAngle = wantUp ? up : rest;
+
+    const prev = f.angle;
+    // Simple spring interpolation
+    const k = CONFIG.flipperSpeed;
+    f.angle += (f.targetAngle - f.angle) * clamp(k*dt, 0, 1);
+    f.angVel = (f.angle - prev) / dt;
+  }
+
+  function flipperSegment(f){
+    const ax = f.px;
+    const ay = f.py;
+    const bx = ax + Math.cos(f.angle) * f.len;
+    const by = ay + Math.sin(f.angle) * f.len;
+    return {ax,ay,bx,by};
+  }
+
+  // ====== Collision handlers ======
+  function collideBallWithSegment(seg, restitution, extraImpulse=0){
+    const cp = closestPointOnSegment(ball.x, ball.y, seg.ax,seg.ay, seg.bx,seg.by);
+    const dx = ball.x - cp.x, dy = ball.y - cp.y;
+    const dist = Math.sqrt(dx*dx + dy*dy) || 0.0001;
+    const overlap = ball.r - dist;
+    if (overlap > 0){
+      // Normal
+      const nx = dx / dist;
+      const ny = dy / dist;
+
+      // Push out
+      ball.x += nx * overlap;
+      ball.y += ny * overlap;
+
+      // Reflect if moving into the surface
+      const dot = ball.vx*nx + ball.vy*ny;
+      if (dot < 0){
+        const refl = reflectVelocity(ball.vx, ball.vy, nx, ny, restitution);
+        ball.vx = refl.vx + nx*extraImpulse;
+        ball.vy = refl.vy + ny*extraImpulse;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  function collideBallWithBumper(b){
+    const dx = ball.x - b.x;
+    const dy = ball.y - b.y;
+    const dist = Math.sqrt(dx*dx + dy*dy) || 0.0001;
+    const minD = ball.r + b.r;
+    if (dist < minD){
+      const nx = dx / dist;
+      const ny = dy / dist;
+      const overlap = minD - dist;
+      ball.x += nx * overlap;
+      ball.y += ny * overlap;
+
+      // Bounce
+      const dot = ball.vx*nx + ball.vy*ny;
+      if (dot < 0){
+        const refl = reflectVelocity(ball.vx, ball.vy, nx, ny, 0.98);
+        ball.vx = refl.vx + nx*240*DPR;
+        ball.vy = refl.vy + ny*240*DPR;
+      }
+
+      addScore(CONFIG.baseHitScore * mult);
+      addChip(b.v);
+      return true;
+    }
+    return false;
+  }
+
+  // ====== Game loop ======
+  let last = performance.now();
+  function tick(now){
+    const dt = Math.min(0.018, (now - last) / 1000);
+    last = now;
+
+    // Update flippers
+    updateFlipper(flL, dt);
+    updateFlipper(flR, dt);
+
+    // Plunger: if ball in plunger lane and right is held, charge; release -> launch
+    if (ball.inPlunger){
+      // Keep ball seated in plunger lane
+      ball.x = W*0.86;
+      ball.y = clamp(ball.y, H*0.72, H*0.90);
+
+      if (holdingRight){
+        plungerPower = clamp(plungerPower + CONFIG.plungerChargeRate*dt, 0, CONFIG.plungerMax);
+        hintLbl.textContent = "Loslassen = Abschuss (" + Math.round(plungerPower/10)*10 + ")";
+      } else {
+        hintLbl.textContent = "Links/Rechts halten = Flipper • Rechts halten im Plunger = Laden";
+        if (plungerPower > 40){
+          // launch
+          ball.inPlunger = false;
+          ball.vx = 0;
+          ball.vy = -plungerPower;
+          plungerPower = 0;
+          addScore(10);
+        }
+      }
+    }
+
+    // Physics integrate
+    if (!ball.inPlunger){
+      ball.vy += CONFIG.gravity * dt * DPR;
+      ball.x  += ball.vx * dt;
+      ball.y  += ball.vy * dt;
+
+      // Damping + speed clamp
+      ball.vx *= CONFIG.damping;
+      ball.vy *= CONFIG.damping;
+      const sp = Math.sqrt(ball.vx*ball.vx + ball.vy*ball.vy);
+      if (sp > CONFIG.maxSpeed*DPR){
+        const s = (CONFIG.maxSpeed*DPR)/sp;
+        ball.vx *= s; ball.vy *= s;
+      }
+
+      // Collide walls
+      for (const w of walls){
+        collideBallWithSegment(w, CONFIG.restitution);
+      }
+
+      // Collide flippers (with impulse when moving up)
+      const segL = flipperSegment(flL);
+      const segR = flipperSegment(flR);
+
+      // Extra impulse based on angular velocity (simple premium feel)
+      const impL = Math.max(0, flL.angVel) * 4.0 * DPR;
+      const impR = Math.max(0, flR.angVel) * 4.0 * DPR;
+
+      collideBallWithSegment(segL, 0.88, impL);
+      collideBallWithSegment(segR, 0.88, impR);
+
+      // Collide bumpers
+      for (const b of bumpers) collideBallWithBumper(b);
+
+      // Drain check
+      if (ball.y > H + 90*DPR){
+        lives--;
+        livesLbl.textContent = String(lives);
+        mult = 1; multLbl.textContent = "1";
+        sum = 0; sumLbl.textContent = "0";
+        showToast(lives > 0 ? "Ball verloren" : "Game Over");
+        if (lives > 0) resetBall();
+        else {
+          // simple restart after a moment
+          setTimeout(resetAll, 650);
+        }
+      }
+    }
+
+    render();
+    requestAnimationFrame(tick);
+  }
+
+  // ====== Render ======
+  function render(){
+    ctx.clearRect(0,0,W,H);
+
+    // Background subtle gradient
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0, "rgba(74,124,145,0.10)");
+    g.addColorStop(1, "rgba(74,124,145,0.00)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,W,H);
+
+    // Walls
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "rgba(30,35,38,0.22)";
+    ctx.lineWidth = 10*DPR;
+    for (const w of walls){
+      ctx.beginPath();
+      ctx.moveTo(w.ax,w.ay);
+      ctx.lineTo(w.bx,w.by);
+      ctx.stroke();
+    }
+
+    // Bumpers
+    for (const b of bumpers){
+      // glow
+      ctx.beginPath();
+      ctx.fillStyle = "rgba(74,124,145,0.18)";
+      ctx.arc(b.x,b.y,b.r+10*DPR,0,Math.PI*2);
+      ctx.fill();
+
+      // body
+      ctx.beginPath();
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+      ctx.fill();
+
+      ctx.lineWidth = 4*DPR;
+      ctx.strokeStyle = "rgba(30,35,38,0.22)";
+      ctx.stroke();
+
+      // number
+      ctx.fillStyle = "rgba(30,35,38,0.86)";
+      ctx.font = `${14*DPR}px Nunito`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("+"+b.v, b.x, b.y);
+    }
+
+    // Flippers
+    drawFlipper(flL);
+    drawFlipper(flR);
+
+    // Ball
+    ctx.beginPath();
+    ctx.fillStyle = "rgba(255,255,255,0.95)";
+    ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.lineWidth = 3*DPR;
+    ctx.strokeStyle = "rgba(30,35,38,0.22)";
+    ctx.stroke();
+
+    // Plunger hint visual
+    ctx.save();
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle = "rgba(74,124,145,1)";
+    ctx.fillRect(W*0.80, H*0.50, (W*0.92 - W*0.80), H*0.40);
+    ctx.restore();
+
+    if (ball.inPlunger && plungerPower > 0){
+      ctx.save();
+      ctx.globalAlpha = 0.65;
+      ctx.fillStyle = "rgba(74,124,145,1)";
+      const barH = clamp((plungerPower/CONFIG.plungerMax),0,1) * (H*0.32);
+      ctx.fillRect(W*0.94, H*0.90 - barH, 8*DPR, barH);
+      ctx.restore();
+    }
+  }
+
+  function drawFlipper(f){
+    const seg = flipperSegment(f);
+    ctx.lineWidth = CONFIG.flipperWidth * DPR;
+    ctx.strokeStyle = "rgba(30,35,38,0.34)";
+    ctx.beginPath();
+    ctx.moveTo(seg.ax,seg.ay);
+    ctx.lineTo(seg.bx,seg.by);
+    ctx.stroke();
+
+    // highlight
+    ctx.lineWidth = (CONFIG.flipperWidth-6) * DPR;
+    ctx.strokeStyle = "rgba(255,255,255,0.72)";
+    ctx.beginPath();
+    ctx.moveTo(seg.ax,seg.ay);
+    ctx.lineTo(seg.bx,seg.by);
+    ctx.stroke();
+  }
+
+  // ====== Init ======
+  function init(){
+    setTarget(0);
+    resetAll();
+    requestAnimationFrame(tick);
+  }
+  init();
+
+})();
+</script>
+</body>
+</html>
