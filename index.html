@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#4A7C91" />
-  <title>Kidsneed – Premium Pinball (stable)</title>
+  <title>Kidsneed – Premium Pinball (FIXED)</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -67,9 +67,7 @@
       border-bottom:3px solid var(--ink);
       background:var(--card);
     }
-    .title{
-      display:flex; flex-direction:column; gap:2px; min-width:0;
-    }
+    .title{display:flex; flex-direction:column; gap:2px; min-width:0;}
     .title b{
       font-size:18px; font-weight:900; letter-spacing:-.02em;
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -119,6 +117,7 @@
       background: linear-gradient(180deg, rgba(237,232,220,.55), rgba(255,255,255,1));
     }
     canvas{width:100%; height:100%; display:block;}
+
     .zones{position:absolute; inset:0; display:flex;}
     .zone{flex:1; background:transparent; touch-action:none;}
 
@@ -158,18 +157,20 @@
     .panel .row{display:flex; gap:var(--s2); justify-content:space-between;}
   </style>
 </head>
+
 <body>
   <div class="frame">
     <div class="topbar">
       <div class="title">
         <b>Premium Pinball</b>
-        <small>Kidsneed Arcade</small>
+        <small>Kidsneed Arcade · FIXED</small>
       </div>
 
       <div class="chips">
         <div class="chip"><span>Ziel</span><b id="target">10</b></div>
         <div class="chip"><span>Summe</span><b id="sum">0</b></div>
         <div class="chip"><span>x</span><b id="mult">1</b></div>
+        <div class="chip"><span>❤</span><b id="lives">3</b></div>
         <div class="chip"><span>⭐</span><b id="score">0</b></div>
         <button class="btn" id="resetBtn" title="Neu">↻</button>
       </div>
@@ -179,6 +180,8 @@
       <div class="board" id="board">
         <canvas id="cv"></canvas>
         <div class="toast" id="toast">JACKPOT!</div>
+
+        <!-- Touch: links halten = linker Flipper | rechts halten = rechter Flipper / Plunger laden -->
         <div class="zones" aria-hidden="true">
           <div class="zone" id="zl"></div>
           <div class="zone" id="zr"></div>
@@ -186,14 +189,15 @@
 
         <div class="overlay" id="over">
           <div class="panel">
-            <h2 id="overTitle">Game Over</h2>
-            <p id="overText">Keine Bälle mehr übrig.</p>
+            <h2>Game Over</h2>
+            <p>Keine Bälle mehr übrig.</p>
             <div class="row">
               <button class="btn" id="overRestart">Neu starten</button>
               <button class="btn" id="overClose">Schließen</button>
             </div>
           </div>
         </div>
+
       </div>
     </div>
   </div>
@@ -202,22 +206,22 @@
 (() => {
   "use strict";
 
-  // ---- Tunables (einfach diversifizieren später) ----
+  // ---- Tunables ----
   const CFG = {
     tableW: 400,
     tableH: 700,
 
     ballR: 9,
-    gravity: 1200,         // px/s^2
-    damping: 0.995,        // air friction
+    gravity: 1200,
+    damping: 0.995,
     maxSpeed: 1700,
 
     wallRest: 0.92,
-    bumperRest: 1.08,
-    slingRest: 1.10,
+    bumperRest: 1.06,
+    slingRest: 1.08,
     flipperRest: 0.90,
 
-    // Smart layer
+    // Smart layer (minimal)
     targetCycle: [10, 12, 15],
     bumperChips: [1, 2, 3],
     jackpotBase: 650,
@@ -230,26 +234,27 @@
     flRestAngle: 0.50,
     flUpAngle: -0.70,
     flSnap: 22,
-    flPunch: 260,          // extra impulse
+    flPunch: 240,
 
     // Plunger
     plungerMax: 1500,
-    plCharge: 1200,        // per second
+    plCharge: 1200,
     plMin: 120,
 
     lives: 3,
-    ballSave: 1.2          // sec after launch
+    ballSave: 1.2
   };
 
   const cv = document.getElementById("cv");
   const boardEl = document.getElementById("board");
   const ctx = cv.getContext("2d");
 
-  const elScore = document.getElementById("score");
-  const elMult  = document.getElementById("mult");
-  const elTarget= document.getElementById("target");
-  const elSum   = document.getElementById("sum");
-  const toast   = document.getElementById("toast");
+  const elScore  = document.getElementById("score");
+  const elMult   = document.getElementById("mult");
+  const elTarget = document.getElementById("target");
+  const elSum    = document.getElementById("sum");
+  const elLives  = document.getElementById("lives");
+  const toast    = document.getElementById("toast");
 
   const over = document.getElementById("over");
   const overRestart = document.getElementById("overRestart");
@@ -262,12 +267,8 @@
   const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
   const hypot = (x,y)=>Math.sqrt(x*x+y*y);
 
-  // ---- Rendering transform (table coords -> canvas pixels) ----
-  let DPR = 1;
-  let scale = 1;
-  let offX = 0, offY = 0;
-  let pxW = 0, pxH = 0;
-
+  // ---- Responsive fit (table coords -> canvas pixels) ----
+  let DPR = 1, scale = 1, offX = 0, offY = 0, pxW = 0, pxH = 0;
   function resize(){
     const r = boardEl.getBoundingClientRect();
     DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
@@ -276,7 +277,6 @@
     cv.width = pxW;
     cv.height = pxH;
 
-    // Fit table into board while keeping aspect ratio
     const sx = pxW / CFG.tableW;
     const sy = pxH / CFG.tableH;
     scale = Math.min(sx, sy);
@@ -284,22 +284,12 @@
     offX = (pxW - CFG.tableW * scale) * 0.5;
     offY = (pxH - CFG.tableH * scale) * 0.5;
 
-    // Important: reset transform (no cumulative scaling)
     ctx.setTransform(1,0,0,1,0,0);
   }
   window.addEventListener("resize", resize, {passive:true});
   resize();
 
-  function toTableCoords(clientX, clientY){
-    const rect = cv.getBoundingClientRect();
-    const x = (clientX - rect.left) * DPR;
-    const y = (clientY - rect.top) * DPR;
-    const tx = (x - offX) / scale;
-    const ty = (y - offY) / scale;
-    return {x:tx, y:ty};
-  }
-
-  // ---- Simple audio ticks (optional, no assets) ----
+  // ---- Tiny synth beeps (optional, no assets) ----
   let audioCtx=null;
   let soundOn=true;
   function beep(freq=520, dur=0.07, gain=0.04){
@@ -325,10 +315,9 @@
     showToast._t = setTimeout(()=>toast.classList.remove("show"), 520);
   }
 
-  // ---- Table geometry ----
+  // ---- Geometry ----
   let walls=[], slings=[], bumpers=[], sensors=[];
-
-  function seg(x1,y1,x2,y2, kind="wall"){ return {x1,y1,x2,y2, kind}; }
+  function seg(x1,y1,x2,y2){ return {x1,y1,x2,y2}; }
   function circ(x,y,r, chip){ return {x,y,r, chip, glow:0}; }
   function sens(x,y,r, fn, cd){ return {x,y,r, fn, t:0, cd}; }
 
@@ -343,7 +332,7 @@
     const drainGap = 128;
     const mid = W/2;
 
-    // Outer
+    // Outer boundaries
     walls.push(
       seg(left, top, right, top),
       seg(left, top, left, bot-180),
@@ -352,13 +341,23 @@
       seg(mid + drainGap/2, bot, right, bot-180),
     );
 
-    // Plunger lane
-    const plA = W*0.80, plB=W*0.92;
-    walls.push(
-      seg(plA, bot, plA, H*0.50),
-      seg(plB, bot, plB, H*0.14),
-      seg(W*0.20, H*0.14, plB, H*0.14)
-    );
+    // ===== PLUNGER LANE (FIXED) =====
+    // Goal: lane is OPEN to the left at the top, with a guide ramp.
+    const plA = W*0.80; // inner wall (left side of lane)
+    const plB = W*0.92; // outer wall (right side of lane)
+
+    // Outer wall goes almost to the top
+    walls.push(seg(plB, bot, plB, H*0.10));
+
+    // Inner wall stops lower -> creates exit opening
+    walls.push(seg(plA, bot, plA, H*0.42));
+
+    // Top shelf DOES NOT close the lane; ends at 72% width
+    walls.push(seg(W*0.18, H*0.14, W*0.72, H*0.14));
+
+    // Guide ramp pushing ball out of lane into the field
+    walls.push(seg(plA, H*0.42, W*0.66, H*0.30));
+    // ===== END PLUNGER FIX =====
 
     // Mid ramps
     walls.push(
@@ -368,13 +367,13 @@
 
     // Slings triangles
     slings.push(
-      seg(W*0.20, H*0.70, W*0.34, H*0.80, "sling"),
-      seg(W*0.34, H*0.80, W*0.24, H*0.86, "sling"),
-      seg(W*0.24, H*0.86, W*0.20, H*0.70, "sling"),
+      seg(W*0.20, H*0.70, W*0.34, H*0.80),
+      seg(W*0.34, H*0.80, W*0.24, H*0.86),
+      seg(W*0.24, H*0.86, W*0.20, H*0.70),
 
-      seg(W*0.80, H*0.70, W*0.66, H*0.80, "sling"),
-      seg(W*0.66, H*0.80, W*0.76, H*0.86, "sling"),
-      seg(W*0.76, H*0.86, W*0.80, H*0.70, "sling"),
+      seg(W*0.80, H*0.70, W*0.66, H*0.80),
+      seg(W*0.66, H*0.80, W*0.76, H*0.86),
+      seg(W*0.76, H*0.86, W*0.80, H*0.70),
     );
 
     // Bumpers
@@ -384,7 +383,7 @@
       circ(W*0.50, H*0.33, 30, CFG.bumperChips[2]),
     );
 
-    // Orbit sensor (oben rechts)
+    // Orbit sensor (top right) – subtle
     sensors.push(sens(W*0.86, H*0.18, 14, () => {
       score += 250 * mult;
       addChip(5);
@@ -413,6 +412,14 @@
     plPower = 0;
   }
 
+  function updateHUD(){
+    elScore.textContent = String(score);
+    elMult.textContent = String(mult);
+    elTarget.textContent = String(target);
+    elSum.textContent = String(sum);
+    elLives.textContent = String(lives);
+  }
+
   function resetAll(){
     score=0; mult=1; lives=CFG.lives; sum=0; tIdx=0; target=CFG.targetCycle[tIdx];
     gameOver=false;
@@ -420,13 +427,6 @@
     resetBall();
     updateHUD();
     showToast("Start");
-  }
-
-  function updateHUD(){
-    elScore.textContent = String(score);
-    elMult.textContent = String(mult);
-    elTarget.textContent = String(target);
-    elSum.textContent = String(sum);
   }
 
   function addChip(v){
@@ -457,6 +457,7 @@
     t = clamp(t,0,1);
     return { x:x1+t*dx, y:y1+t*dy };
   }
+
   function reflect(nx,ny, rest){
     const dot = ball.vx*nx + ball.vy*ny;
     if(dot < 0){
@@ -469,7 +470,7 @@
     const cp = closestPoint(ball.x,ball.y, s.x1,s.y1,s.x2,s.y2);
     const dx = ball.x - cp.x, dy = ball.y - cp.y;
     const dist = Math.sqrt(dx*dx+dy*dy) || 0.0001;
-    const overlap = (CFG.ballR) - dist;
+    const overlap = CFG.ballR - dist;
     if(overlap > 0){
       const nx = dx/dist, ny = dy/dist;
       ball.x += nx*(overlap+0.5);
@@ -491,7 +492,7 @@
       ball.x += nx*(overlap+0.5);
       ball.y += ny*(overlap+0.5);
       reflect(nx,ny,rest);
-      // tiny kick outward (premium feel without exploding)
+      // controlled kick (no rocket)
       ball.vx += nx*70;
       ball.vy += ny*70;
       return true;
@@ -500,7 +501,7 @@
   }
 
   // ---- Input ----
-  let holdL=false, holdR=false;
+  let holdL=false, holdR=false, prevHoldR=false;
 
   function bindHold(el, setFn){
     el.addEventListener("pointerdown", (e)=>{ e.preventDefault(); setFn(true); }, {passive:false});
@@ -522,17 +523,23 @@
     if(e.key==="ArrowRight" || e.key==="l") holdR=false;
   });
 
-  // Plunger logic: right hold charges ONLY when ball in plunger
+  // ---- Launch (FIXED exit) ----
   function tryLaunch(){
     if(!ball.inPlunger) return;
-    if(plPower >= CFG.plMin){
-      ball.inPlunger=false;
-      ball.vx = (Math.random()-0.5)*18;
-      ball.vy = -plPower;
-      ball.saveT = CFG.ballSave;
-      plPower = 0;
-      beep(420,0.06,0.04);
-    }
+    if(plPower < CFG.plMin) return;
+
+    ball.inPlunger = false;
+
+    // Important: give slight LEFT bias so the ball definitely leaves the lane
+    ball.vx = -55 + (Math.random()*20 - 10);
+    ball.vy = -plPower;
+
+    // Also nudge the x a bit left immediately (guaranteed "on the table")
+    ball.x = CFG.tableW * 0.78;
+
+    ball.saveT = CFG.ballSave;
+    plPower = 0;
+    beep(420,0.06,0.04);
   }
 
   // ---- Flippers ----
@@ -548,9 +555,7 @@
     const restR = Math.PI - CFG.flRestAngle;
     const upR   = Math.PI - CFG.flUpAngle;
 
-    // left
     flL.targ = holdL ? upL : restL;
-    // right
     flR.targ = holdR ? upR : restR;
 
     const move = (f)=>{
@@ -561,7 +566,7 @@
     move(flL); move(flR);
   }
 
-  // ---- Fixed timestep loop (stabil) ----
+  // ---- Fixed timestep loop ----
   let last = performance.now();
   let acc = 0;
   const STEP = 1/120;
@@ -571,17 +576,20 @@
 
     updateFlippers(dt);
 
-    // Plunger charge
+    // Plunger behaviour: HOLD right to charge, RELEASE to launch.
     if(ball.inPlunger){
-      // keep ball in lane
+      // Keep ball seated in lane
       ball.x = CFG.tableW - 25;
       ball.y = clamp(ball.y, CFG.tableH-90, CFG.tableH-50);
 
       if(holdR){
         plPower = clamp(plPower + CFG.plCharge*dt, 0, CFG.plungerMax);
-      } else {
-        if(plPower > 0) tryLaunch();
       }
+      // Launch only on release edge
+      if(prevHoldR && !holdR){
+        tryLaunch();
+      }
+      prevHoldR = holdR;
       return;
     }
 
@@ -601,27 +609,24 @@
       ball.vx *= s; ball.vy *= s;
     }
 
-    // collisions walls
+    // collisions
     for(const w of walls) collideSegment(w, CFG.wallRest, 1);
 
-    // slings add small boost
     for(const s of slings){
-      if(collideSegment(s, CFG.slingRest, 1.02)){
+      if(collideSegment(s, CFG.slingRest, 1.01)){
         score += 25 * mult;
         beep(460,0.05,0.03);
         updateHUD();
       }
     }
 
-    // flippers collide + punch on active press
-    const fls = [flL, flR];
-    for(const f of fls){
+    // flippers collide + punch
+    for(const f of [flL, flR]){
       const e = flipperEndpoints(f);
       const hit = collideSegment({x1:e.x1,y1:e.y1,x2:e.x2,y2:e.y2}, CFG.flipperRest, 1);
       if(hit){
         const pressing = (f.side==="L" && holdL) || (f.side==="R" && holdR);
         if(pressing){
-          // punch away from flipper direction (controlled)
           ball.vx += Math.cos(f.ang) * CFG.flPunch;
           ball.vy += Math.sin(f.ang) * CFG.flPunch;
         }
@@ -629,7 +634,6 @@
       }
     }
 
-    // bumpers
     for(const b of bumpers){
       if(collideCircle(b, CFG.bumperRest)){
         b.glow = 1;
@@ -640,7 +644,6 @@
       b.glow = Math.max(0, b.glow - 3*dt);
     }
 
-    // sensors
     for(const s of sensors){
       s.t = Math.max(0, s.t - dt);
       if(s.t>0) continue;
@@ -676,7 +679,6 @@
   }
 
   function draw(){
-    // clear
     ctx.setTransform(1,0,0,1,0,0);
     ctx.clearRect(0,0,pxW,pxH);
 
@@ -716,14 +718,12 @@
 
     // bumpers
     for(const b of bumpers){
-      // glow ring
       ctx.save();
       ctx.globalAlpha = 0.10 + 0.20*b.glow;
       ctx.fillStyle = "rgba(74,124,145,1)";
       ctx.beginPath(); ctx.arc(b.x,b.y,b.r+10,0,Math.PI*2); ctx.fill();
       ctx.restore();
 
-      // body
       ctx.fillStyle="rgba(255,255,255,0.92)";
       ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill();
       ctx.lineWidth=2;
@@ -750,7 +750,7 @@
     drawFlipper(flL);
     drawFlipper(flR);
 
-    // plunger lane hint
+    // plunger lane hint (subtle)
     ctx.save();
     ctx.globalAlpha=0.16;
     ctx.fillStyle="rgba(74,124,145,1)";
@@ -790,12 +790,10 @@
     const e = flipperEndpoints(f);
     ctx.lineCap="round";
 
-    // base
     ctx.lineWidth = CFG.flWidth;
     ctx.strokeStyle="rgba(45,42,38,0.34)";
     ctx.beginPath(); ctx.moveTo(e.x1,e.y1); ctx.lineTo(e.x2,e.y2); ctx.stroke();
 
-    // highlight
     ctx.lineWidth = Math.max(4, CFG.flWidth-6);
     ctx.strokeStyle="rgba(255,255,255,0.70)";
     ctx.beginPath(); ctx.moveTo(e.x1,e.y1); ctx.lineTo(e.x2,e.y2); ctx.stroke();
