@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#4A7C91" />
-  <title>Kidsneed – Premium Pinball (FIXED)</title>
+  <title>Kidsneed – Kinder-Flipper (Sticker Pinball)</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,21 +14,28 @@
 
   <style>
     :root{
+      /* Kidsneed-ish calm premium */
       --bg:#F5F0E8;
       --card:#FFFFFF;
       --muted:#EDE8DC;
+
       --ink:#2D2A26;
       --ink2:#6B665C;
-      --accent:#4A7C91;
 
-      --r-md:16px;
+      --accent:#4A7C91;     /* blau-grün */
+      --mint:#7BA08A;       /* ruhig */
+      --sun:#E8C547;        /* warmes gelb */
+      --coral:#E07A5F;      /* weich */
+      --violet:#7B6EA8;     /* leise */
+
       --r-lg:24px;
       --shadow:0 8px 24px rgba(45,42,38,.12);
       --shadow2:0 2px 10px rgba(45,42,38,.10);
 
-      --s1:8px; --s2:12px; --s3:16px; --s4:24px;
+      --s2:12px; --s3:16px; --s4:24px;
       --maxw:560px;
     }
+
     *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
     html,body{height:100%;}
     body{
@@ -47,7 +54,7 @@
     .frame{
       width:100%;
       max-width:var(--maxw);
-      height: min(92dvh, 920px);
+      height:min(92dvh, 920px);
       background:var(--card);
       border:3px solid var(--ink);
       border-radius:var(--r-lg);
@@ -58,16 +65,17 @@
     }
 
     .topbar{
-      height:72px;
+      height:78px;
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:var(--s2);
       padding:0 var(--s3);
       border-bottom:3px solid var(--ink);
-      background:var(--card);
+      background:linear-gradient(180deg, rgba(255,255,255,1), rgba(237,232,220,.55));
     }
-    .title{display:flex; flex-direction:column; gap:2px; min-width:0;}
+
+    .title{display:flex; flex-direction:column; gap:4px; min-width:0;}
     .title b{
       font-size:18px; font-weight:900; letter-spacing:-.02em;
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -76,8 +84,12 @@
       font-weight:900; font-size:12px; letter-spacing:.10em;
       color:var(--ink2); text-transform:uppercase;
     }
-    .chips{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;}
-    .chip{
+
+    .chips{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;
+    }
+
+    .pill{
       display:inline-flex; align-items:center; gap:8px;
       padding:10px 12px;
       border-radius:999px;
@@ -87,8 +99,10 @@
       user-select:none;
       white-space:nowrap;
     }
-    .chip span{color:var(--ink2); font-weight:900; font-size:12px; letter-spacing:.10em; text-transform:uppercase;}
-    .chip b{font-size:14px;}
+    .pill span{
+      color:var(--ink2); font-weight:900; font-size:12px; letter-spacing:.10em; text-transform:uppercase;
+    }
+    .pill b{font-size:14px;}
     .btn{
       border:2px solid var(--ink);
       background:var(--muted);
@@ -96,6 +110,7 @@
       padding:10px 12px;
       font-weight:900;
       cursor:pointer;
+      user-select:none;
     }
     .btn:active{transform:translateY(1px);}
 
@@ -104,9 +119,10 @@
       flex:1;
       padding:var(--s3);
       background:
-        radial-gradient(900px 320px at 50% 0%, rgba(74,124,145,.12), transparent 60%),
+        radial-gradient(900px 340px at 50% 0%, rgba(74,124,145,.12), transparent 60%),
         var(--card);
     }
+
     .board{
       position:absolute;
       inset:var(--s3);
@@ -114,16 +130,18 @@
       border:3px solid var(--ink);
       box-shadow:var(--shadow);
       overflow:hidden;
-      background: linear-gradient(180deg, rgba(237,232,220,.55), rgba(255,255,255,1));
+      background: linear-gradient(180deg, rgba(237,232,220,.65), rgba(255,255,255,1));
     }
+
     canvas{width:100%; height:100%; display:block;}
 
+    /* Touch zones: links/rechts halten */
     .zones{position:absolute; inset:0; display:flex;}
     .zone{flex:1; background:transparent; touch-action:none;}
 
     .toast{
       position:absolute;
-      left:50%; top:16px;
+      left:50%; top:14px;
       transform:translateX(-50%) translateY(-6px);
       padding:10px 14px;
       border-radius:999px;
@@ -134,6 +152,7 @@
       transition:opacity .16s ease, transform .16s ease;
       pointer-events:none;
       box-shadow:0 10px 30px rgba(0,0,0,.18);
+      white-space:nowrap;
     }
     .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 
@@ -145,7 +164,7 @@
       padding:var(--s3);
     }
     .panel{
-      width:min(420px, 100%);
+      width:min(440px, 100%);
       background:var(--card);
       border:3px solid var(--ink);
       border-radius:var(--r-lg);
@@ -153,8 +172,18 @@
       padding:var(--s4);
     }
     .panel h2{margin:0 0 var(--s2); font-size:20px; font-weight:900;}
-    .panel p{margin:0 0 var(--s3); color:var(--ink2); font-weight:800;}
-    .panel .row{display:flex; gap:var(--s2); justify-content:space-between;}
+    .panel p{margin:0 0 var(--s3); color:var(--ink2); font-weight:800; line-height:1.35;}
+    .panel .row{display:flex; gap:var(--s2); justify-content:space-between; flex-wrap:wrap;}
+    .hint{
+      margin-top:12px;
+      padding:10px 12px;
+      border-radius:16px;
+      border:2px dashed rgba(45,42,38,.18);
+      background:rgba(237,232,220,.55);
+      color:var(--ink2);
+      font-weight:900;
+      font-size:13px;
+    }
   </style>
 </head>
 
@@ -162,26 +191,27 @@
   <div class="frame">
     <div class="topbar">
       <div class="title">
-        <b>Premium Pinball</b>
-        <small>Kidsneed Arcade · FIXED</small>
+        <b>Sticker-Pinball</b>
+        <small>Kinder-Flipper · ruhig & premium</small>
       </div>
 
       <div class="chips">
-        <div class="chip"><span>Ziel</span><b id="target">10</b></div>
-        <div class="chip"><span>Summe</span><b id="sum">0</b></div>
-        <div class="chip"><span>x</span><b id="mult">1</b></div>
-        <div class="chip"><span>❤</span><b id="lives">3</b></div>
-        <div class="chip"><span>⭐</span><b id="score">0</b></div>
-        <button class="btn" id="resetBtn" title="Neu">↻</button>
+        <div class="pill" title="Mission">
+          <span>⭐ Sterne</span><b id="stars">0</b><span>/</span><b id="goal">15</b>
+        </div>
+        <div class="pill" title="Bonus-Stufe"><span>Bonus</span><b id="bonus">0</b></div>
+        <div class="pill" title="Bälle"><span>❤</span><b id="lives">3</b></div>
+        <div class="pill" title="Punkte"><span>Score</span><b id="score">0</b></div>
+        <button class="btn" id="btnPause" title="Pause">⏸</button>
+        <button class="btn" id="btnReset" title="Neu">↻</button>
       </div>
     </div>
 
     <div class="stage">
       <div class="board" id="board">
         <canvas id="cv"></canvas>
-        <div class="toast" id="toast">JACKPOT!</div>
+        <div class="toast" id="toast">Los geht’s!</div>
 
-        <!-- Touch: links halten = linker Flipper | rechts halten = rechter Flipper / Plunger laden -->
         <div class="zones" aria-hidden="true">
           <div class="zone" id="zl"></div>
           <div class="zone" id="zr"></div>
@@ -189,11 +219,19 @@
 
         <div class="overlay" id="over">
           <div class="panel">
-            <h2>Game Over</h2>
-            <p>Keine Bälle mehr übrig.</p>
+            <h2 id="overTitle">Pause</h2>
+            <p id="overText">
+              Steuerung:<br>
+              <b>Links halten</b> = linker Flipper · <b>Rechts halten</b> = rechter Flipper / Plunger laden.<br>
+              Wenn der Ball im Plunger ist: <b>rechts halten</b> (laden) → <b>loslassen</b> (schießen).
+            </p>
             <div class="row">
-              <button class="btn" id="overRestart">Neu starten</button>
-              <button class="btn" id="overClose">Schließen</button>
+              <button class="btn" id="overResume">Weiter</button>
+              <button class="btn" id="overSound">Sound: An</button>
+              <button class="btn" id="overEasy">Easy: An</button>
+            </div>
+            <div class="hint">
+              Ziel: Sammle ⭐ Sterne. Wenn du genug hast, gibt’s ein <b>Sticker-Feuerwerk</b> und Bonus-Punkte.
             </div>
           </div>
         </div>
@@ -206,68 +244,89 @@
 (() => {
   "use strict";
 
-  // ---- Tunables ----
+  // ===== Kinder-Settings (ruhig, fair, „nicht frustig“) =====
   const CFG = {
     tableW: 400,
     tableH: 700,
 
+    // physics
     ballR: 9,
-    gravity: 1200,
-    damping: 0.995,
-    maxSpeed: 1700,
+    gravity: 1180,
+    damping: 0.996,
+    maxSpeed: 1500,
 
-    wallRest: 0.92,
-    bumperRest: 1.06,
-    slingRest: 1.08,
+    wallRest: 0.93,
+    bumperRest: 1.05,
+    slingRest: 1.07,
     flipperRest: 0.90,
 
-    // Smart layer (minimal)
-    targetCycle: [10, 12, 15],
-    bumperChips: [1, 2, 3],
-    jackpotBase: 650,
-    softBust: true,
-    multMax: 5,
-
-    // Flippers
-    flLen: 72,
+    // flippers
+    flLen: 78,
     flWidth: 14,
     flRestAngle: 0.50,
-    flUpAngle: -0.70,
-    flSnap: 22,
-    flPunch: 240,
+    flUpAngle: -0.72,
+    flSnap: 24,
+    flPunch: 220,
 
-    // Plunger
-    plungerMax: 1500,
-    plCharge: 1200,
+    // plunger
+    plungerMax: 1350,
+    plCharge: 1100,
     plMin: 120,
 
+    // kid-friendly pacing
     lives: 3,
-    ballSave: 1.2
+    ballSave: 1.6,     // more forgiving
+    easyMode: true,    // default ON
+
+    // mission
+    starGoal: 15,
+
+    // scoring
+    hitScore: 15,
+    bumperScore: 40,
+    slingScore: 10,
+    stickerBonusBase: 300,
+
+    // confetti
+    confettiCount: 18,
   };
 
+  // DOM
   const cv = document.getElementById("cv");
   const boardEl = document.getElementById("board");
   const ctx = cv.getContext("2d");
 
-  const elScore  = document.getElementById("score");
-  const elMult   = document.getElementById("mult");
-  const elTarget = document.getElementById("target");
-  const elSum    = document.getElementById("sum");
-  const elLives  = document.getElementById("lives");
-  const toast    = document.getElementById("toast");
+  const elStars = document.getElementById("stars");
+  const elGoal  = document.getElementById("goal");
+  const elBonus = document.getElementById("bonus");
+  const elLives = document.getElementById("lives");
+  const elScore = document.getElementById("score");
+  const toast = document.getElementById("toast");
+
+  const btnReset = document.getElementById("btnReset");
+  const btnPause = document.getElementById("btnPause");
 
   const over = document.getElementById("over");
-  const overRestart = document.getElementById("overRestart");
-  const overClose = document.getElementById("overClose");
-  const resetBtn = document.getElementById("resetBtn");
+  const overTitle = document.getElementById("overTitle");
+  const overResume = document.getElementById("overResume");
+  const overSound = document.getElementById("overSound");
+  const overEasy = document.getElementById("overEasy");
 
   const zl = document.getElementById("zl");
   const zr = document.getElementById("zr");
 
+  // helpers
   const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
   const hypot = (x,y)=>Math.sqrt(x*x+y*y);
 
-  // ---- Responsive fit (table coords -> canvas pixels) ----
+  function showToast(txt){
+    toast.textContent = txt;
+    toast.classList.add("show");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=>toast.classList.remove("show"), 620);
+  }
+
+  // ===== Responsive fit =====
   let DPR = 1, scale = 1, offX = 0, offY = 0, pxW = 0, pxH = 0;
   function resize(){
     const r = boardEl.getBoundingClientRect();
@@ -289,17 +348,17 @@
   window.addEventListener("resize", resize, {passive:true});
   resize();
 
-  // ---- Tiny synth beeps (optional, no assets) ----
+  // ===== Minimal sound =====
   let audioCtx=null;
   let soundOn=true;
-  function beep(freq=520, dur=0.07, gain=0.04){
+  function beep(freq=520, dur=0.06, gain=0.035, type="sine"){
     if(!soundOn) return;
     try{
       if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
       const t0 = audioCtx.currentTime;
       const o = audioCtx.createOscillator();
       const g = audioCtx.createGain();
-      o.type="sine";
+      o.type = type;
       o.frequency.setValueAtTime(freq, t0);
       g.gain.setValueAtTime(gain, t0);
       g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
@@ -308,64 +367,51 @@
     }catch(e){}
   }
 
-  function showToast(txt){
-    toast.textContent = txt;
-    toast.classList.add("show");
-    clearTimeout(showToast._t);
-    showToast._t = setTimeout(()=>toast.classList.remove("show"), 520);
+  function updateOverlayButtons(){
+    overSound.textContent = "Sound: " + (soundOn ? "An" : "Aus");
+    overEasy.textContent  = "Easy: "  + (CFG.easyMode ? "An" : "Aus");
   }
 
-  // ---- Geometry ----
-  let walls=[], slings=[], bumpers=[], sensors=[];
+  // ===== Table geometry =====
+  let walls=[], slings=[], bumpers=[], stars=[], gates=[];
   function seg(x1,y1,x2,y2){ return {x1,y1,x2,y2}; }
-  function circ(x,y,r, chip){ return {x,y,r, chip, glow:0}; }
-  function sens(x,y,r, fn, cd){ return {x,y,r, fn, t:0, cd}; }
+  function circ(x,y,r, kind, data){ return {x,y,r, kind, data, glow:0}; }
 
   function buildTable(){
-    const W = CFG.tableW, H = CFG.tableH;
-    walls=[]; slings=[]; bumpers=[]; sensors=[];
+    const W=CFG.tableW, H=CFG.tableH;
+    walls=[]; slings=[]; bumpers=[]; stars=[]; gates=[];
 
-    const pad = 12;
+    const pad=12;
     const left=pad, right=W-pad, top=pad, bot=H-pad;
 
     // drain gap
-    const drainGap = 128;
+    const drainGap = 140;
     const mid = W/2;
 
-    // Outer boundaries
+    // outer walls (rounded feel via drawing; physics is segments)
     walls.push(
       seg(left, top, right, top),
-      seg(left, top, left, bot-180),
-      seg(right, top, right, bot-180),
-      seg(left, bot-180, mid - drainGap/2, bot),
-      seg(mid + drainGap/2, bot, right, bot-180),
+      seg(left, top, left, bot-190),
+      seg(right, top, right, bot-190),
+      seg(left, bot-190, mid - drainGap/2, bot),
+      seg(mid + drainGap/2, bot, right, bot-190),
     );
 
-    // ===== PLUNGER LANE (FIXED) =====
-    // Goal: lane is OPEN to the left at the top, with a guide ramp.
-    const plA = W*0.80; // inner wall (left side of lane)
-    const plB = W*0.92; // outer wall (right side of lane)
+    // plunger lane (open exit + guide)
+    const plA = W*0.80;
+    const plB = W*0.92;
+    walls.push(seg(plB, bot, plB, H*0.10));      // outer wall
+    walls.push(seg(plA, bot, plA, H*0.42));      // inner wall stops -> exit
+    walls.push(seg(W*0.16, H*0.14, W*0.72, H*0.14)); // top shelf (doesn't close lane)
+    walls.push(seg(plA, H*0.42, W*0.64, H*0.30));    // guide ramp
 
-    // Outer wall goes almost to the top
-    walls.push(seg(plB, bot, plB, H*0.10));
-
-    // Inner wall stops lower -> creates exit opening
-    walls.push(seg(plA, bot, plA, H*0.42));
-
-    // Top shelf DOES NOT close the lane; ends at 72% width
-    walls.push(seg(W*0.18, H*0.14, W*0.72, H*0.14));
-
-    // Guide ramp pushing ball out of lane into the field
-    walls.push(seg(plA, H*0.42, W*0.66, H*0.30));
-    // ===== END PLUNGER FIX =====
-
-    // Mid ramps
+    // gentle ramps
     walls.push(
       seg(W*0.18, H*0.48, W*0.40, H*0.58),
       seg(W*0.82, H*0.48, W*0.60, H*0.58),
     );
 
-    // Slings triangles
+    // slings (kid-friendly: soft)
     slings.push(
       seg(W*0.20, H*0.70, W*0.34, H*0.80),
       seg(W*0.34, H*0.80, W*0.24, H*0.86),
@@ -376,80 +422,25 @@
       seg(W*0.76, H*0.86, W*0.80, H*0.70),
     );
 
-    // Bumpers
+    // bumpers as “Sticker-Tiere”
     bumpers.push(
-      circ(W*0.42, H*0.22, 25, CFG.bumperChips[0]),
-      circ(W*0.58, H*0.22, 25, CFG.bumperChips[1]),
-      circ(W*0.50, H*0.33, 30, CFG.bumperChips[2]),
+      circ(W*0.42, H*0.22, 25, "bumper", {emoji:"🐻", color:"#7BA08A", star:1}),
+      circ(W*0.58, H*0.22, 25, "bumper", {emoji:"🐸", color:"#4A7C91", star:1}),
+      circ(W*0.50, H*0.33, 30, "bumper", {emoji:"🦊", color:"#E07A5F", star:2}),
     );
 
-    // Orbit sensor (top right) – subtle
-    sensors.push(sens(W*0.86, H*0.18, 14, () => {
-      score += 250 * mult;
-      addChip(5);
-      showToast("Orbit +5");
-      beep(640,0.08,0.05);
-    }, 0.7));
-  }
-  buildTable();
+    // star targets (collect)
+    stars.push(
+      circ(W*0.30, H*0.50, 13, "star", {emoji:"⭐", color:"#E8C547", star:1}),
+      circ(W*0.70, H*0.50, 13, "star", {emoji:"⭐", color:"#E8C547", star:1}),
+      circ(W*0.50, H*0.62, 13, "star", {emoji:"⭐", color:"#E8C547", star:1}),
+    );
 
-  // ---- Game state ----
-  let score=0, mult=1, lives=CFG.lives, sum=0, tIdx=0, target=CFG.targetCycle[tIdx];
-  let gameOver=false;
-
-  const ball = { x: CFG.tableW-25, y: CFG.tableH-50, vx:0, vy:0, inPlunger:true, saveT:0 };
-  let plPower=0;
-
-  const flL = { side:"L", px:120, py:CFG.tableH-60, len:CFG.flLen, ang:0, targ:0, av:0 };
-  const flR = { side:"R", px:CFG.tableW-170, py:CFG.tableH-60, len:CFG.flLen, ang:0, targ:0, av:0 };
-
-  function resetBall(){
-    ball.x = CFG.tableW-25;
-    ball.y = CFG.tableH-50;
-    ball.vx = 0; ball.vy = 0;
-    ball.inPlunger = true;
-    ball.saveT = 0;
-    plPower = 0;
+    // gentle “gate” (bonus lane top)
+    gates.push(circ(W*0.86, H*0.18, 14, "gate", {emoji:"🌈", color:"#7B6EA8", star:3, cd:0.8, t:0}));
   }
 
-  function updateHUD(){
-    elScore.textContent = String(score);
-    elMult.textContent = String(mult);
-    elTarget.textContent = String(target);
-    elSum.textContent = String(sum);
-    elLives.textContent = String(lives);
-  }
-
-  function resetAll(){
-    score=0; mult=1; lives=CFG.lives; sum=0; tIdx=0; target=CFG.targetCycle[tIdx];
-    gameOver=false;
-    over.style.display="none";
-    resetBall();
-    updateHUD();
-    showToast("Start");
-  }
-
-  function addChip(v){
-    sum += v;
-
-    if(sum === target){
-      score += CFG.jackpotBase * mult;
-      mult = clamp(mult+1,1,CFG.multMax);
-      sum = 0;
-      tIdx = (tIdx+1) % CFG.targetCycle.length;
-      target = CFG.targetCycle[tIdx];
-      showToast("JACKPOT!");
-      beep(760,0.09,0.06);
-    } else if(sum > target){
-      mult = clamp(mult-1,1,CFG.multMax);
-      sum = CFG.softBust ? Math.max(0,target-1) : 0;
-      showToast("Oops…");
-      beep(220,0.08,0.05);
-    }
-    updateHUD();
-  }
-
-  // ---- Collision helpers ----
+  // ===== Physics helpers =====
   function closestPoint(px,py, x1,y1,x2,y2){
     const dx=x2-x1, dy=y2-y1;
     const l2 = dx*dx+dy*dy || 1;
@@ -458,7 +449,7 @@
     return { x:x1+t*dx, y:y1+t*dy };
   }
 
-  function reflect(nx,ny, rest){
+  function reflect(ball, nx, ny, rest){
     const dot = ball.vx*nx + ball.vy*ny;
     if(dot < 0){
       ball.vx = (ball.vx - 2*dot*nx) * rest;
@@ -466,43 +457,126 @@
     }
   }
 
-  function collideSegment(s, rest, boost=1){
+  function collideSegment(ball, s, rest, boost=1){
     const cp = closestPoint(ball.x,ball.y, s.x1,s.y1,s.x2,s.y2);
     const dx = ball.x - cp.x, dy = ball.y - cp.y;
     const dist = Math.sqrt(dx*dx+dy*dy) || 0.0001;
-    const overlap = CFG.ballR - dist;
+    const overlap = ball.r - dist;
     if(overlap > 0){
       const nx = dx/dist, ny = dy/dist;
       ball.x += nx*(overlap+0.5);
       ball.y += ny*(overlap+0.5);
-      reflect(nx,ny,rest);
+      reflect(ball, nx, ny, rest);
       ball.vx *= boost; ball.vy *= boost;
       return true;
     }
     return false;
   }
 
-  function collideCircle(c, rest){
+  function collideCircle(ball, c, rest, kick=60){
     const dx=ball.x-c.x, dy=ball.y-c.y;
     const dist = Math.sqrt(dx*dx+dy*dy) || 0.0001;
-    const minD = CFG.ballR + c.r;
+    const minD = ball.r + c.r;
     if(dist < minD){
       const nx = dx/dist, ny = dy/dist;
       const overlap = minD - dist;
-      ball.x += nx*(overlap+0.5);
-      ball.y += ny*(overlap+0.5);
-      reflect(nx,ny,rest);
-      // controlled kick (no rocket)
-      ball.vx += nx*70;
-      ball.vy += ny*70;
+      ball.x += nx*(overlap+0.6);
+      ball.y += ny*(overlap+0.6);
+      reflect(ball, nx, ny, rest);
+      ball.vx += nx*kick;
+      ball.vy += ny*kick;
       return true;
     }
     return false;
   }
 
-  // ---- Input ----
-  let holdL=false, holdR=false, prevHoldR=false;
+  // ===== Game state =====
+  const ball = { x:0, y:0, vx:0, vy:0, r:CFG.ballR, inPlunger:true, saveT:0 };
+  let plPower=0;
 
+  const flL = { side:"L", px:120, py:CFG.tableH-60, len:CFG.flLen, ang:0, targ:0, av:0 };
+  const flR = { side:"R", px:CFG.tableW-170, py:CFG.tableH-60, len:CFG.flLen, ang:0, targ:0, av:0 };
+
+  let holdL=false, holdR=false, prevHoldR=false;
+  let score=0, lives=CFG.lives;
+  let starCount=0, bonusLevel=0;
+  let paused=false;
+  let confetti=[];
+
+  function resetBall(){
+    ball.x = CFG.tableW-25;
+    ball.y = CFG.tableH-55;
+    ball.vx = 0; ball.vy = 0;
+    ball.inPlunger = true;
+    ball.saveT = 0;
+    plPower = 0;
+  }
+
+  function resetGame(){
+    buildTable();
+    score=0; lives=CFG.lives;
+    starCount=0; bonusLevel=0;
+    confetti.length=0;
+    resetBall();
+    updateHUD();
+    showToast("⭐ Sammle Sterne!");
+    beep(520,0.07,0.03,"sine");
+  }
+
+  function updateHUD(){
+    elStars.textContent = String(starCount);
+    elGoal.textContent = String(CFG.starGoal);
+    elBonus.textContent = String(bonusLevel);
+    elLives.textContent = String(lives);
+    elScore.textContent = String(score);
+  }
+
+  function addStars(n, label){
+    starCount += n;
+    score += (n * 35) + (bonusLevel * 10);
+    if(label) showToast(label);
+
+    // Mission complete -> sticker bonus
+    if(starCount >= CFG.starGoal){
+      starCount = 0;
+      bonusLevel = Math.min(9, bonusLevel + 1);
+      score += CFG.stickerBonusBase + (bonusLevel * 120);
+      makeConfetti();
+      showToast("🎉 Sticker-Bonus!");
+      beep(760,0.08,0.05,"triangle");
+      beep(920,0.07,0.045,"sine");
+
+      // kid-friendly: sometimes an extra ball
+      if(CFG.easyMode && bonusLevel % 3 === 0 && lives < 5){
+        lives++;
+        showToast("❤ Extra Ball!");
+        beep(660,0.08,0.05,"sine");
+      }
+    }
+    updateHUD();
+  }
+
+  // ===== Confetti =====
+  function makeConfetti(){
+    confetti.length = 0;
+    const colors = ["#4A7C91","#7BA08A","#E8C547","#E07A5F","#7B6EA8"];
+    for(let i=0;i<CFG.confettiCount;i++){
+      confetti.push({
+        x: CFG.tableW*0.50 + (Math.random()*40-20),
+        y: 80 + Math.random()*20,
+        vx: Math.random()*220 - 110,
+        vy: Math.random()*-220 - 90,
+        g: 520 + Math.random()*260,
+        r: 4 + Math.random()*4,
+        rot: Math.random()*Math.PI*2,
+        vr: Math.random()*6 - 3,
+        c: colors[i % colors.length],
+        t: 1.2 + Math.random()*0.6
+      });
+    }
+  }
+
+  // ===== Input =====
   function bindHold(el, setFn){
     el.addEventListener("pointerdown", (e)=>{ e.preventDefault(); setFn(true); }, {passive:false});
     el.addEventListener("pointerup", (e)=>{ e.preventDefault(); setFn(false); }, {passive:false});
@@ -517,32 +591,30 @@
     if(e.key==="ArrowLeft" || e.key==="a") holdL=true;
     if(e.key==="ArrowRight" || e.key==="l") holdR=true;
     if(e.key===" ") tryLaunch();
+    if(e.key==="Escape") togglePause();
   });
   window.addEventListener("keyup", (e)=>{
     if(e.key==="ArrowLeft" || e.key==="a") holdL=false;
     if(e.key==="ArrowRight" || e.key==="l") holdR=false;
   });
 
-  // ---- Launch (FIXED exit) ----
-  function tryLaunch(){
-    if(!ball.inPlunger) return;
-    if(plPower < CFG.plMin) return;
-
-    ball.inPlunger = false;
-
-    // Important: give slight LEFT bias so the ball definitely leaves the lane
-    ball.vx = -55 + (Math.random()*20 - 10);
-    ball.vy = -plPower;
-
-    // Also nudge the x a bit left immediately (guaranteed "on the table")
-    ball.x = CFG.tableW * 0.78;
-
-    ball.saveT = CFG.ballSave;
-    plPower = 0;
-    beep(420,0.06,0.04);
+  // ===== Pause / Settings =====
+  function togglePause(force){
+    paused = (typeof force === "boolean") ? force : !paused;
+    over.style.display = paused ? "flex" : "none";
+    overTitle.textContent = paused ? "Pause" : " ";
+    updateOverlayButtons();
   }
+  btnPause.addEventListener("click", ()=>togglePause());
+  overResume.addEventListener("click", ()=>togglePause(false));
+  overSound.addEventListener("click", ()=>{ soundOn=!soundOn; updateOverlayButtons(); beep(420,0.05,0.03); });
+  overEasy.addEventListener("click", ()=>{ CFG.easyMode=!CFG.easyMode; updateOverlayButtons(); showToast(CFG.easyMode ? "Easy an" : "Easy aus"); });
+  btnReset.addEventListener("click", ()=>{ togglePause(false); resetGame(); });
 
-  // ---- Flippers ----
+  // prevent iOS scroll
+  document.addEventListener("touchmove", (e)=>e.preventDefault(), {passive:false});
+
+  // ===== Flippers =====
   function flipperEndpoints(f){
     const x2 = f.px + Math.cos(f.ang)*f.len;
     const y2 = f.py + Math.sin(f.ang)*f.len;
@@ -566,26 +638,48 @@
     move(flL); move(flR);
   }
 
-  // ---- Fixed timestep loop ----
+  // ===== Launch =====
+  function tryLaunch(){
+    if(!ball.inPlunger) return;
+    if(plPower < CFG.plMin) return;
+
+    ball.inPlunger = false;
+
+    // kid-friendly: always enters the field reliably
+    ball.vx = -55 + (Math.random()*18 - 9);
+    ball.vy = -plPower;
+
+    // nudge into playfield
+    ball.x = CFG.tableW * 0.78;
+    ball.saveT = CFG.ballSave;
+
+    plPower = 0;
+    beep(520,0.06,0.03,"sine");
+  }
+
+  // ===== Fixed timestep loop =====
   let last = performance.now();
   let acc = 0;
   const STEP = 1/120;
 
   function physicsStep(dt){
-    if(gameOver) return;
+    if(paused) return;
 
     updateFlippers(dt);
 
-    // Plunger behaviour: HOLD right to charge, RELEASE to launch.
+    // update gate cooldowns
+    for(const g of gates){
+      g.data.t = Math.max(0, g.data.t - dt);
+    }
+
+    // plunger: hold right to charge, release to shoot
     if(ball.inPlunger){
-      // Keep ball seated in lane
       ball.x = CFG.tableW - 25;
-      ball.y = clamp(ball.y, CFG.tableH-90, CFG.tableH-50);
+      ball.y = clamp(ball.y, CFG.tableH-95, CFG.tableH-55);
 
       if(holdR){
         plPower = clamp(plPower + CFG.plCharge*dt, 0, CFG.plungerMax);
       }
-      // Launch only on release edge
       if(prevHoldR && !holdR){
         tryLaunch();
       }
@@ -594,165 +688,203 @@
     }
 
     // integrate
-    ball.vy += CFG.gravity * dt;
+    const grav = CFG.easyMode ? (CFG.gravity*0.95) : CFG.gravity;
+    ball.vy += grav * dt;
     ball.x += ball.vx * dt;
     ball.y += ball.vy * dt;
 
     // damping
-    ball.vx *= CFG.damping;
-    ball.vy *= CFG.damping;
+    const damp = CFG.easyMode ? (CFG.damping*1.0005) : CFG.damping;
+    ball.vx *= damp;
+    ball.vy *= damp;
 
     // speed cap
     const sp = hypot(ball.vx,ball.vy);
-    if(sp > CFG.maxSpeed){
-      const s = CFG.maxSpeed/sp;
+    const cap = CFG.easyMode ? (CFG.maxSpeed*0.90) : CFG.maxSpeed;
+    if(sp > cap){
+      const s = cap/sp;
       ball.vx *= s; ball.vy *= s;
     }
 
-    // collisions
-    for(const w of walls) collideSegment(w, CFG.wallRest, 1);
-
-    for(const s of slings){
-      if(collideSegment(s, CFG.slingRest, 1.01)){
-        score += 25 * mult;
-        beep(460,0.05,0.03);
-        updateHUD();
+    // collisions: walls
+    for(const w of walls){
+      if(collideSegment(ball, w, CFG.wallRest, 1)) {
+        score += CFG.hitScore + Math.min(20, bonusLevel*2);
       }
     }
 
-    // flippers collide + punch
+    // slings
+    for(const s of slings){
+      if(collideSegment(ball, s, CFG.slingRest, 1.01)){
+        score += CFG.slingScore;
+        beep(420,0.04,0.02,"triangle");
+      }
+    }
+
+    // flippers + gentle punch when pressed
     for(const f of [flL, flR]){
       const e = flipperEndpoints(f);
-      const hit = collideSegment({x1:e.x1,y1:e.y1,x2:e.x2,y2:e.y2}, CFG.flipperRest, 1);
+      const hit = collideSegment(ball, {x1:e.x1,y1:e.y1,x2:e.x2,y2:e.y2}, CFG.flipperRest, 1);
       if(hit){
         const pressing = (f.side==="L" && holdL) || (f.side==="R" && holdR);
         if(pressing){
-          ball.vx += Math.cos(f.ang) * CFG.flPunch;
-          ball.vy += Math.sin(f.ang) * CFG.flPunch;
+          const punch = CFG.easyMode ? (CFG.flPunch*0.85) : CFG.flPunch;
+          ball.vx += Math.cos(f.ang) * punch;
+          ball.vy += Math.sin(f.ang) * punch;
         }
-        beep(420,0.04,0.025);
+        beep(520,0.035,0.015,"sine");
       }
     }
 
+    // bumpers
     for(const b of bumpers){
-      if(collideCircle(b, CFG.bumperRest)){
+      if(collideCircle(ball, b, CFG.bumperRest, CFG.easyMode ? 55 : 70)){
         b.glow = 1;
-        score += 80 * mult;
-        addChip(b.chip);
-        beep(620,0.06,0.04);
+        score += CFG.bumperScore + bonusLevel*5;
+        addStars(b.data.star, b.data.emoji + " +" + b.data.star);
+        beep(660,0.06,0.03,"sine");
       }
       b.glow = Math.max(0, b.glow - 3*dt);
     }
 
-    for(const s of sensors){
-      s.t = Math.max(0, s.t - dt);
-      if(s.t>0) continue;
-      const dx=ball.x-s.x, dy=ball.y-s.y;
-      if(dx*dx+dy*dy <= (CFG.ballR+s.r)*(CFG.ballR+s.r)){
-        s.t = s.cd;
-        s.fn();
+    // star targets (smaller, gentle, give stars)
+    for(const s of stars){
+      if(collideCircle(ball, s, 1.02, 40)){
+        s.glow = 1;
+        addStars(s.data.star, "⭐ +" + s.data.star);
+        beep(740,0.05,0.025,"triangle");
       }
+      s.glow = Math.max(0, s.glow - 4*dt);
     }
 
-    // drain
+    // gate (cooldown)
+    for(const g of gates){
+      if(g.data.t > 0) continue;
+      const dx=ball.x-g.x, dy=ball.y-g.y;
+      const rr=(ball.r+g.r);
+      if(dx*dx+dy*dy <= rr*rr){
+        g.data.t = g.data.cd;
+        g.glow = 1;
+        addStars(g.data.star, g.data.emoji + " +" + g.data.star);
+        score += 120 + bonusLevel*20;
+        beep(820,0.07,0.03,"sine");
+      }
+      g.glow = Math.max(0, g.glow - 3*dt);
+    }
+
+    // ball save
     if(ball.saveT > 0) ball.saveT = Math.max(0, ball.saveT - dt);
 
-    if(ball.y > CFG.tableH + 50){
+    // drain
+    if(ball.y > CFG.tableH + 55){
       if(ball.saveT > 0){
         resetBall();
-        showToast("Ball Save");
+        showToast("🛟 Ball Save!");
+        beep(520,0.06,0.03,"sine");
+        updateHUD();
         return;
       }
       lives--;
-      mult = 1;
-      sum = 0;
       updateHUD();
 
       if(lives > 0){
-        showToast("Ball verloren");
         resetBall();
+        showToast("❤ Weiter!");
+        beep(220,0.08,0.03,"triangle");
       } else {
-        gameOver = true;
-        over.style.display="flex";
+        paused = true;
+        over.style.display = "flex";
+        overTitle.textContent = "Spiel vorbei";
       }
+    }
+
+    updateHUD();
+
+    // confetti physics
+    if(confetti.length){
+      for(const p of confetti){
+        p.vy += p.g*dt;
+        p.x += p.vx*dt;
+        p.y += p.vy*dt;
+        p.rot += p.vr*dt;
+        p.t -= dt;
+      }
+      confetti = confetti.filter(p => p.t > 0 && p.y < CFG.tableH+80);
     }
   }
 
+  // ===== Draw =====
   function draw(){
     ctx.setTransform(1,0,0,1,0,0);
     ctx.clearRect(0,0,pxW,pxH);
 
-    // transform to table coords
     ctx.setTransform(scale,0,0,scale, offX, offY);
 
-    // soft background wash
-    const g = ctx.createLinearGradient(0,0,0,CFG.tableH);
-    g.addColorStop(0,"rgba(74,124,145,0.10)");
-    g.addColorStop(1,"rgba(74,124,145,0.00)");
-    ctx.fillStyle = g;
+    // background wash
+    const bg = ctx.createLinearGradient(0,0,0,CFG.tableH);
+    bg.addColorStop(0, "rgba(74,124,145,0.10)");
+    bg.addColorStop(1, "rgba(74,124,145,0.00)");
+    ctx.fillStyle = bg;
     ctx.fillRect(0,0,CFG.tableW,CFG.tableH);
 
-    // subtle grid
+    // playful dots (very subtle)
     ctx.save();
     ctx.globalAlpha = 0.06;
-    ctx.strokeStyle = "rgba(45,42,38,1)";
-    ctx.lineWidth = 1;
-    for(let x=28;x<CFG.tableW;x+=28){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,CFG.tableH); ctx.stroke(); }
-    for(let y=28;y<CFG.tableH;y+=28){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(CFG.tableW,y); ctx.stroke(); }
+    ctx.fillStyle = "rgba(45,42,38,1)";
+    for(let y=24;y<CFG.tableH;y+=36){
+      for(let x=18;x<CFG.tableW;x+=36){
+        ctx.beginPath();
+        ctx.arc(x + (y%72?8:0), y, 1.2, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
     ctx.restore();
 
-    // walls
-    ctx.strokeStyle="rgba(45,42,38,0.26)";
+    // draw “wood-ish” rails (visual only)
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    ctx.strokeStyle = "rgba(45,42,38,1)";
+    ctx.lineWidth = 18;
+    ctx.lineCap="round";
+    // approximate outer rail (visual)
+    ctx.beginPath();
+    ctx.moveTo(14, 18);
+    ctx.lineTo(CFG.tableW-14, 18);
+    ctx.lineTo(CFG.tableW-14, CFG.tableH-210);
+    ctx.lineTo(CFG.tableW*0.62, CFG.tableH-26);
+    ctx.moveTo(CFG.tableW*0.38, CFG.tableH-26);
+    ctx.lineTo(14, CFG.tableH-210);
+    ctx.lineTo(14, 18);
+    ctx.stroke();
+    ctx.restore();
+
+    // physics walls
+    ctx.strokeStyle="rgba(45,42,38,0.22)";
     ctx.lineWidth=6;
     ctx.lineCap="round";
     for(const w of walls){
       ctx.beginPath(); ctx.moveTo(w.x1,w.y1); ctx.lineTo(w.x2,w.y2); ctx.stroke();
     }
 
-    // slings
-    ctx.strokeStyle="rgba(74,124,145,0.30)";
+    // slings (mint)
+    ctx.strokeStyle="rgba(123,160,138,0.40)";
     ctx.lineWidth=6;
     for(const s of slings){
       ctx.beginPath(); ctx.moveTo(s.x1,s.y1); ctx.lineTo(s.x2,s.y2); ctx.stroke();
     }
 
-    // bumpers
-    for(const b of bumpers){
-      ctx.save();
-      ctx.globalAlpha = 0.10 + 0.20*b.glow;
-      ctx.fillStyle = "rgba(74,124,145,1)";
-      ctx.beginPath(); ctx.arc(b.x,b.y,b.r+10,0,Math.PI*2); ctx.fill();
-      ctx.restore();
-
-      ctx.fillStyle="rgba(255,255,255,0.92)";
-      ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill();
-      ctx.lineWidth=2;
-      ctx.strokeStyle="rgba(45,42,38,0.22)";
-      ctx.stroke();
-
-      ctx.fillStyle="rgba(45,42,38,0.86)";
-      ctx.font="900 14px Nunito";
-      ctx.textAlign="center";
-      ctx.textBaseline="middle";
-      ctx.fillText("+"+b.chip, b.x, b.y);
-    }
-
-    // sensors subtle
-    ctx.save();
-    ctx.globalAlpha=0.14;
-    ctx.fillStyle="rgba(74,124,145,1)";
-    for(const s of sensors){
-      ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill();
-    }
-    ctx.restore();
+    // gate + stars + bumpers as stickers
+    drawStickerCircles(gates, true);
+    drawStickerCircles(stars, false);
+    drawStickerCircles(bumpers, true);
 
     // flippers
     drawFlipper(flL);
     drawFlipper(flR);
 
-    // plunger lane hint (subtle)
+    // plunger lane highlight
     ctx.save();
-    ctx.globalAlpha=0.16;
+    ctx.globalAlpha=0.10;
     ctx.fillStyle="rgba(74,124,145,1)";
     ctx.fillRect(CFG.tableW*0.80, CFG.tableH*0.52, (CFG.tableW*0.92-CFG.tableW*0.80), CFG.tableH*0.38);
     ctx.restore();
@@ -764,15 +896,23 @@
       ctx.globalAlpha=0.70;
       ctx.fillStyle="rgba(74,124,145,1)";
       const h = frac*210;
-      ctx.fillRect(CFG.tableW-10, CFG.tableH-50-h, 6, h);
+      ctx.fillRect(CFG.tableW-10, CFG.tableH-55-h, 6, h);
+      ctx.restore();
+
+      // tiny hint icon
+      ctx.save();
+      ctx.globalAlpha=0.9;
+      ctx.font="900 12px Nunito";
+      ctx.fillStyle="rgba(45,42,38,0.65)";
+      ctx.fillText("HALTEN", CFG.tableW-86, CFG.tableH-80-h*0.4);
       ctx.restore();
     }
 
     // ball
-    ctx.fillStyle="rgba(255,255,255,0.95)";
-    ctx.beginPath(); ctx.arc(ball.x,ball.y,CFG.ballR,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="rgba(255,255,255,0.97)";
+    ctx.beginPath(); ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2); ctx.fill();
     ctx.lineWidth=2;
-    ctx.strokeStyle="rgba(45,42,38,0.22)";
+    ctx.strokeStyle="rgba(45,42,38,0.20)";
     ctx.stroke();
 
     // ball save halo
@@ -781,8 +921,58 @@
       ctx.globalAlpha=0.12;
       ctx.strokeStyle="rgba(74,124,145,1)";
       ctx.lineWidth=6;
-      ctx.beginPath(); ctx.arc(ball.x,ball.y,CFG.ballR+9,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(ball.x,ball.y,ball.r+9,0,Math.PI*2); ctx.stroke();
       ctx.restore();
+    }
+
+    // confetti
+    if(confetti.length){
+      for(const p of confetti){
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.c;
+        ctx.fillRect(-p.r, -p.r, p.r*2, p.r*2);
+        ctx.restore();
+      }
+    }
+  }
+
+  function drawStickerCircles(arr, withBorder){
+    for(const c of arr){
+      const glow = c.glow || 0;
+      const color = (c.data && c.data.color) ? c.data.color : "#4A7C91";
+
+      // glow ring
+      ctx.save();
+      ctx.globalAlpha = 0.10 + 0.18*glow;
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(c.x,c.y,c.r+10,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+
+      // sticker body
+      ctx.fillStyle="rgba(255,255,255,0.94)";
+      ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2); ctx.fill();
+
+      if(withBorder){
+        ctx.lineWidth=2;
+        ctx.strokeStyle="rgba(45,42,38,0.18)";
+        ctx.stroke();
+      }
+
+      // emoji
+      const em = c.data?.emoji || "";
+      if(em){
+        ctx.save();
+        ctx.font = `900 ${Math.max(12, c.r)}px Nunito`;
+        // emoji sizes behave better with normal font
+        ctx.font = `${Math.max(14, c.r)}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
+        ctx.textAlign="center";
+        ctx.textBaseline="middle";
+        ctx.fillText(em, c.x, c.y+1);
+        ctx.restore();
+      }
     }
   }
 
@@ -790,15 +980,18 @@
     const e = flipperEndpoints(f);
     ctx.lineCap="round";
 
+    // base
     ctx.lineWidth = CFG.flWidth;
     ctx.strokeStyle="rgba(45,42,38,0.34)";
     ctx.beginPath(); ctx.moveTo(e.x1,e.y1); ctx.lineTo(e.x2,e.y2); ctx.stroke();
 
+    // highlight tint
     ctx.lineWidth = Math.max(4, CFG.flWidth-6);
-    ctx.strokeStyle="rgba(255,255,255,0.70)";
+    ctx.strokeStyle="rgba(123,160,138,0.70)"; /* mint */
     ctx.beginPath(); ctx.moveTo(e.x1,e.y1); ctx.lineTo(e.x2,e.y2); ctx.stroke();
   }
 
+  // ===== Main loop =====
   function loop(now){
     const dt = Math.min(0.05, (now-last)/1000);
     last = now;
@@ -812,17 +1005,12 @@
     requestAnimationFrame(loop);
   }
 
-  // UI actions
-  resetBtn.addEventListener("click", resetAll);
-  overRestart.addEventListener("click", resetAll);
-  overClose.addEventListener("click", ()=>{ over.style.display="none"; });
-
-  // prevent iOS scroll
-  document.addEventListener("touchmove", (e)=>e.preventDefault(), {passive:false});
-
-  // init
-  resetAll();
+  // ===== Start =====
+  buildTable();
+  resetGame();
+  updateOverlayButtons();
   requestAnimationFrame(loop);
+
 })();
 </script>
 </body>
