@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Logic Pinball Pro</title>
+    <title>Logic Pinball Pro - Fixed</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -33,11 +33,12 @@
             align-items: center;
         }
         canvas {
-            background: #05050a;
+            background: radial-gradient(circle at 50% 20%, #0a0a1a 0%, #020205 100%);
             box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
             max-width: 100%;
             max-height: 100%;
             display: block;
+            border: 2px solid #111;
         }
         .hud {
             position: absolute;
@@ -50,11 +51,12 @@
             z-index: 50;
         }
         .stats-box {
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.8);
             border: 1px solid var(--neon-blue);
             padding: 10px 15px;
             border-radius: 4px;
             box-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+            min-width: 120px;
         }
         .multiplier {
             color: var(--neon-green);
@@ -69,16 +71,18 @@
             display: none;
             z-index: 100;
             border-radius: 8px;
+            box-shadow: 0 0 50px var(--neon-blue);
         }
         .btn {
             background: var(--neon-blue);
             color: black;
             font-weight: bold;
-            padding: 10px 20px;
+            padding: 10px 25px;
             border: none;
             cursor: pointer;
             margin-top: 20px;
             text-transform: uppercase;
+            border-radius: 4px;
         }
     </style>
 </head>
@@ -87,18 +91,18 @@
 <div id="game-container">
     <div class="hud">
         <div class="stats-box">
-            <div>PUNKTE: <span id="score">0</span></div>
-            <div class="multiplier">X <span id="mult">1</span></div>
+            <div>SCORE: <span id="score">0</span></div>
+            <div class="multiplier">MULTI: X<span id="mult">1</span></div>
         </div>
         <div class="stats-box text-right">
             <div>BÄLLE: <span id="lives">3</span></div>
-            <div id="status-msg" style="font-size: 0.7rem; color: var(--neon-pink)">BEREIT</div>
+            <div id="status-msg" style="font-size: 0.7rem; color: var(--neon-pink)">DRÜCKE LEERTASTE</div>
         </div>
     </div>
 
     <div id="message-box">
-        <h2 id="msg-title" class="text-2xl mb-2">SPIEL VORBEI</h2>
-        <p id="msg-text">Highscore erreicht!</p>
+        <h2 id="msg-title" class="text-3xl font-bold mb-2">SPIEL VORBEI</h2>
+        <p id="msg-text" class="mb-4">Keine Bälle mehr übrig.</p>
         <button class="btn" onclick="game.reset()">NEUSTART</button>
     </div>
 
@@ -107,18 +111,16 @@
 
 <script>
 /**
- * PINBALL ENGINE LOGIC v2.0
- * Fokus: Vielseitigkeit und Spieltiefe
+ * PINBALL ENGINE v2.1 - PHYSICS STABILITY UPDATE
  */
 
 const canvas = document.getElementById('pinballCanvas');
 const ctx = canvas.getContext('2d');
 
-// Konstanten
 const WIDTH = 400;
 const HEIGHT = 700;
-const BALL_RADIUS = 8;
-const P_STEP = 1; // Physics Sub-Steps für Stabilität
+const BALL_RADIUS = 9;
+const P_STEP = 8; // Physics steps for ultra-stability
 
 class PinballGame {
     constructor() {
@@ -143,13 +145,13 @@ class PinballGame {
         this.lives = 3;
         this.multiplier = 1;
         this.gameOver = false;
-        this.balls = [{
-            x: WIDTH - 20,
-            y: HEIGHT - 40,
+        this.ball = {
+            x: WIDTH - 25,
+            y: HEIGHT - 50,
             vx: 0,
             vy: 0,
             active: true
-        }];
+        };
         this.keys = { left: false, right: false };
         this.updateHUD();
     }
@@ -183,67 +185,62 @@ class PinballGame {
 
     createTable() {
         this.walls = [
-            { x1: 0, y1: 100, x2: 100, y2: 0, type: 'wall' }, // Top left corner
-            { x1: WIDTH-100, y1: 0, x2: WIDTH-50, y2: 50, type: 'wall' }, // Top right corner
-            { x1: 0, y1: 0, x2: WIDTH-50, y2: 0, type: 'wall' }, // Ceiling
-            { x1: 0, y1: 0, x2: 0, y2: HEIGHT, type: 'wall' }, // Left wall
-            { x1: WIDTH, y1: 0, x2: WIDTH, y2: HEIGHT, type: 'wall' }, // Right wall
-            { x1: WIDTH-50, y1: 100, x2: WIDTH-50, y2: HEIGHT, type: 'wall' }, // Plunger wall
-            // Drain areas
-            { x1: 0, y1: HEIGHT-150, x2: 120, y2: HEIGHT-60, type: 'wall' },
-            { x1: WIDTH-50, y1: HEIGHT-150, x2: WIDTH-170, y2: HEIGHT-60, type: 'wall' },
-            // Plunger base
-            { x1: WIDTH-50, y1: HEIGHT-5, x2: WIDTH, y2: HEIGHT-5, type: 'wall' }
+            { x1: 0, y1: 80, x2: 80, y2: 0 }, // Top left
+            { x1: WIDTH-120, y1: 0, x2: WIDTH-50, y2: 70 }, // Top right
+            { x1: 0, y1: 0, x2: WIDTH-50, y2: 0 }, // Ceiling
+            { x1: 0, y1: 0, x2: 0, y2: HEIGHT }, // Left
+            { x1: WIDTH, y1: 0, x2: WIDTH, y2: HEIGHT }, // Right
+            { x1: WIDTH-50, y1: 100, x2: WIDTH-50, y2: HEIGHT }, // Plunger wall
+            // Drain
+            { x1: 0, y1: HEIGHT-150, x2: 120, y2: HEIGHT-60 },
+            { x1: WIDTH-50, y1: HEIGHT-150, x2: WIDTH-170, y2: HEIGHT-60 },
+            // Floor for Plunger
+            { x1: WIDTH-50, y1: HEIGHT-5, x2: WIDTH, y2: HEIGHT-5 }
         ];
 
         this.bumpers = [
-            { x: 130, y: 150, r: 25, color: 'var(--neon-pink)', pts: 100 },
-            { x: 270, y: 150, r: 25, color: 'var(--neon-pink)', pts: 100 },
-            { x: 200, y: 220, r: 30, color: 'var(--neon-blue)', pts: 250 }
+            { x: 130, y: 150, r: 25, color: '#ff007f', pts: 100, pulse: 0 },
+            { x: 270, y: 150, r: 25, color: '#ff007f', pts: 100, pulse: 0 },
+            { x: 200, y: 240, r: 35, color: '#00f2ff', pts: 250, pulse: 0 }
         ];
 
         this.flippers = [
-            { side: 'left', x: 120, y: HEIGHT-60, length: 65, angle: 0.5, baseAngle: 0.5, targetAngle: -0.6, width: 12 },
-            { side: 'right', x: WIDTH-170, y: HEIGHT-60, length: 65, angle: Math.PI-0.5, baseAngle: Math.PI-0.5, targetAngle: Math.PI+0.6, width: 12 }
+            { side: 'left', x: 120, y: HEIGHT-60, length: 70, angle: 0.5, baseAngle: 0.5, targetAngle: -0.6, width: 14 },
+            { side: 'right', x: WIDTH-170, y: HEIGHT-60, length: 70, angle: Math.PI-0.5, baseAngle: Math.PI-0.5, targetAngle: Math.PI+0.6, width: 14 }
         ];
 
-        // Drop Targets Logik
         this.targets = [
-            { x: 40, y: 250, w: 10, h: 40, active: true, id: 'T1' },
-            { x: 40, y: 300, w: 10, h: 40, active: true, id: 'T2' },
-            { x: 40, y: 350, w: 10, h: 40, active: true, id: 'T3' }
+            { x: 30, y: 250, w: 12, h: 45, active: true },
+            { x: 30, y: 310, w: 12, h: 45, active: true },
+            { x: 30, y: 370, w: 12, h: 45, active: true }
         ];
 
-        // Roll-over Lanes
         this.lanes = [
-            { x: 100, y: 30, w: 30, h: 10, hit: false, color: 'var(--neon-yellow)' },
-            { x: 150, y: 30, w: 30, h: 10, hit: false, color: 'var(--neon-yellow)' },
-            { x: 200, y: 30, w: 30, h: 10, hit: false, color: 'var(--neon-yellow)' }
+            { x: 100, y: 20, w: 35, h: 10, hit: false, color: '#fff200' },
+            { x: 150, y: 20, w: 35, h: 10, hit: false, color: '#fff200' },
+            { x: 200, y: 20, w: 35, h: 10, hit: false, color: '#fff200' }
         ];
         
-        // Slingshots (Bouncy triangles)
         this.slingshots = [
-            { x1: 80, y1: HEIGHT-220, x2: 120, y2: HEIGHT-100, side: 'left', active: 0 },
-            { x1: WIDTH-130, y1: HEIGHT-220, x2: WIDTH-170, y2: HEIGHT-100, side: 'right', active: 0 }
+            { x1: 85, y1: HEIGHT-210, x2: 120, y2: HEIGHT-110, active: 0 },
+            { x1: WIDTH-135, y1: HEIGHT-210, x2: WIDTH-170, y2: HEIGHT-110, active: 0 }
         ];
     }
 
     launch() {
-        const ball = this.balls[0];
-        if (ball.y > HEIGHT - 100 && ball.x > WIDTH - 55) {
-            ball.vy = -24;
-            ball.vx = (Math.random() - 0.5) * 2;
-            this.multiplier = 1;
-            this.updateHUD();
+        if (this.ball.y > HEIGHT - 100 && this.ball.x > WIDTH - 55) {
+            this.ball.vy = -26;
+            this.ball.vx = (Math.random() - 0.5) * 2;
+            this.updateStatus("ABSCHUSS!");
         }
     }
 
     update() {
         if (this.gameOver) return;
 
-        // Flipper Bewegung
+        // Flipper Logic
         this.flippers.forEach(f => {
-            const speed = 0.5;
+            const speed = 0.55;
             const isPressed = (f.side === 'left' ? this.keys.left : this.keys.right);
             if(isPressed) {
                 f.angle = (f.side === 'left') ? Math.max(f.targetAngle, f.angle - speed) : Math.min(f.targetAngle, f.angle + speed);
@@ -252,50 +249,47 @@ class PinballGame {
             }
         });
 
-        // Ball Physik
-        this.balls.forEach(ball => {
-            if(!ball.active) return;
+        // Ball Physics Sub-stepping
+        for(let i=0; i < P_STEP; i++) {
+            this.ball.vy += 0.38 / P_STEP;
+            this.ball.vx *= Math.pow(0.998, 1/P_STEP);
+            this.ball.vy *= Math.pow(0.998, 1/P_STEP);
+            this.ball.x += this.ball.vx / P_STEP;
+            this.ball.y += this.ball.vy / P_STEP;
 
-            // Mehrfache Berechnungsschritte für Kollisionsstabilität
-            for(let i=0; i < P_STEP; i++) {
-                ball.vy += 0.35 / P_STEP; // Gravity
-                ball.vx *= 0.998; // Air friction
-                ball.vy *= 0.998;
-                ball.x += ball.vx / P_STEP;
-                ball.y += ball.vy / P_STEP;
+            this.checkCollisions();
+        }
 
-                this.checkCollisions(ball);
-            }
+        // Out of bounds
+        if(this.ball.y > HEIGHT + 50) this.ballLost();
 
-            if(ball.y > HEIGHT + 50) this.ballLost(ball);
-        });
-
-        // Lane Logic: Wenn alle getroffen, Multiplikator hoch
+        // Game Logic updates
         if(this.lanes.every(l => l.hit)) {
             this.multiplier++;
             this.lanes.forEach(l => l.hit = false);
-            this.updateHUD("MULTI-BONUS!");
+            this.updateStatus("MULTI-BONUS! X" + this.multiplier);
+            this.updateHUD();
         }
 
-        // Target Logic: Wenn alle unten, Punkte-Bonus
         if(this.targets.every(t => !t.active)) {
             this.score += 5000 * this.multiplier;
             this.targets.forEach(t => t.active = true);
-            this.updateHUD("TARGET SWEEP!");
+            this.updateStatus("TARGETS RESET!");
+            this.updateHUD();
         }
     }
 
-    checkCollisions(ball) {
-        // 1. Wände
-        this.walls.forEach(w => this.resolveLineCollision(ball, w.x1, w.y1, w.x2, w.y2, 0.7));
+    checkCollisions() {
+        // Walls
+        this.walls.forEach(w => this.resolveLineCollision(this.ball, w.x1, w.y1, w.x2, w.y2, 0.7));
 
-        // 2. Bumper
+        // Bumpers
         this.bumpers.forEach(b => {
-            const d = Math.hypot(ball.x - b.x, ball.y - b.y);
-            if(d < ball.radius + b.r) {
-                const nx = (ball.x - b.x) / d;
-                const ny = (ball.y - b.y) / d;
-                this.reflect(ball, nx, ny, 1.5);
+            const d = Math.hypot(this.ball.x - b.x, this.ball.y - b.y);
+            if(d < BALL_RADIUS + b.r) {
+                const nx = (this.ball.x - b.x) / d;
+                const ny = (this.ball.y - b.y) / d;
+                this.reflect(this.ball, nx, ny, 1.6);
                 this.score += b.pts * this.multiplier;
                 b.pulse = 15;
                 this.updateHUD();
@@ -303,42 +297,49 @@ class PinballGame {
             if(b.pulse > 0) b.pulse--;
         });
 
-        // 3. Flipper
+        // Flippers
         this.flippers.forEach(f => {
             const x2 = f.x + Math.cos(f.angle) * f.length;
             const y2 = f.y + Math.sin(f.angle) * f.length;
-            const isHit = this.resolveLineCollision(ball, f.x, f.y, x2, y2, 0.8, true);
-            if(isHit && (this.keys.left || this.keys.right)) {
-                // Kick-Effekt bei aktivem Schlag
-                ball.vy -= 5;
+            const hit = this.resolveLineCollision(this.ball, f.x, f.y, x2, y2, 0.8, true);
+            if(hit) {
+                const isMovingUp = (f.side === 'left' && this.keys.left) || (f.side === 'right' && this.keys.right);
+                if(isMovingUp) {
+                    this.ball.vy -= 6; // Extra punch
+                    this.ball.vx += (f.side === 'left' ? 2 : -2);
+                }
             }
         });
 
-        // 4. Targets
+        // Targets
         this.targets.forEach(t => {
             if(!t.active) return;
-            if(ball.x + ball.radius > t.x && ball.x - ball.radius < t.x + t.w &&
-               ball.y + ball.radius > t.y && ball.y - ball.radius < t.y + t.h) {
+            if(this.ball.x + BALL_RADIUS > t.x && this.ball.x - BALL_RADIUS < t.x + t.w &&
+               this.ball.y + BALL_RADIUS > t.y && this.ball.y - BALL_RADIUS < t.y + t.h) {
                 t.active = false;
-                ball.vx *= -1;
+                this.ball.vx *= -1.1; // Bounce back
                 this.score += 1000 * this.multiplier;
                 this.updateHUD();
             }
         });
 
-        // 5. Lanes (Sensoren)
+        // Lanes
         this.lanes.forEach(l => {
-            if(!l.hit && ball.x > l.x && ball.x < l.x + l.w && ball.y > l.y && ball.y < l.y + l.h) {
+            if(!l.hit && this.ball.x > l.x && this.ball.x < l.x + l.w && this.ball.y > l.y && this.ball.y < l.y + l.h) {
                 l.hit = true;
                 this.score += 500;
                 this.updateHUD();
             }
         });
 
-        // 6. Slingshots
+        // Slingshots
         this.slingshots.forEach(s => {
-            const hit = this.resolveLineCollision(ball, s.x1, s.y1, s.x2, s.y2, 1.3);
-            if(hit) s.active = 10;
+            const hit = this.resolveLineCollision(this.ball, s.x1, s.y1, s.x2, s.y2, 1.4);
+            if(hit) {
+                s.active = 10;
+                this.score += 50;
+                this.updateHUD();
+            }
             if(s.active > 0) s.active--;
         });
     }
@@ -347,18 +348,23 @@ class PinballGame {
         const dx = x2 - x1;
         const dy = y2 - y1;
         const l2 = dx*dx + dy*dy;
+        if(l2 === 0) return false;
         let t = ((ball.x - x1) * dx + (ball.y - y1) * dy) / l2;
         t = Math.max(0, Math.min(1, t));
         const nx_pt = x1 + t * dx;
         const ny_pt = y1 + t * dy;
         const dist = Math.hypot(ball.x - nx_pt, ball.y - ny_pt);
 
-        if(dist < ball.radius + (isFlipper ? 5 : 0)) {
-            const nx = (ball.x - nx_pt) / dist;
-            const ny = (ball.y - ny_pt) / dist;
+        const threshold = isFlipper ? BALL_RADIUS + 4 : BALL_RADIUS;
+        if(dist < threshold) {
+            // Calculate normal with safety for dist=0
+            const nx = dist > 0 ? (ball.x - nx_pt) / dist : 0;
+            const ny = dist > 0 ? (ball.y - ny_pt) / dist : -1;
+            
             this.reflect(ball, nx, ny, bounce);
-            ball.x = nx_pt + nx * (ball.radius + 1);
-            ball.y = ny_pt + ny * (ball.radius + 1);
+            // Push ball out of geometry to prevent sticking
+            ball.x = nx_pt + nx * (threshold + 1);
+            ball.y = ny_pt + ny * (threshold + 1);
             return true;
         }
         return false;
@@ -366,34 +372,38 @@ class PinballGame {
 
     reflect(ball, nx, ny, bounce) {
         const dot = ball.vx * nx + ball.vy * ny;
-        ball.vx = (ball.vx - 2 * dot * nx) * bounce;
-        ball.vy = (ball.vy - 2 * dot * ny) * bounce;
+        if(dot < 0) { // Only reflect if moving towards the surface
+            ball.vx = (ball.vx - 2 * dot * nx) * bounce;
+            ball.vy = (ball.vy - 2 * dot * ny) * bounce;
+        }
     }
 
-    ballLost(ball) {
+    ballLost() {
         this.lives--;
         this.updateHUD();
         if(this.lives <= 0) {
             this.gameOver = true;
             document.getElementById('message-box').style.display = 'block';
-            document.getElementById('msg-text').innerText = "Finaler Score: " + this.score;
+            document.getElementById('status-msg').innerText = "GAME OVER";
         } else {
-            ball.x = WIDTH - 20;
-            ball.y = HEIGHT - 40;
-            ball.vx = 0;
-            ball.vy = 0;
+            this.ball.x = WIDTH - 25;
+            this.ball.y = HEIGHT - 50;
+            this.ball.vx = 0;
+            this.ball.vy = 0;
+            this.updateStatus("BALL VERLOREN!");
         }
     }
 
-    updateHUD(tempMsg) {
+    updateHUD() {
         document.getElementById('score').innerText = this.score.toLocaleString();
         document.getElementById('lives').innerText = this.lives;
         document.getElementById('mult').innerText = this.multiplier;
-        if(tempMsg) {
-            const el = document.getElementById('status-msg');
-            el.innerText = tempMsg;
-            setTimeout(() => el.innerText = this.lives > 0 ? "BÄLLE IM SPIEL" : "SPIEL VORBEI", 2000);
-        }
+    }
+
+    updateStatus(msg) {
+        const el = document.getElementById('status-msg');
+        el.innerText = msg;
+        setTimeout(() => { if(!this.gameOver) el.innerText = "BEREIT"; }, 1500);
     }
 
     reset() {
@@ -405,50 +415,57 @@ class PinballGame {
     draw() {
         ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
-        // Spielfeld-Deko
-        ctx.strokeStyle = '#111122';
+        // Decor Grid
+        ctx.strokeStyle = '#0a0a1a';
         ctx.lineWidth = 1;
         for(let i=0; i<WIDTH; i+=40) {
             ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, HEIGHT); ctx.stroke();
         }
 
-        // Wände
-        ctx.strokeStyle = '#333344';
-        ctx.lineWidth = 4;
+        // Walls
+        ctx.strokeStyle = '#222233';
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
         this.walls.forEach(w => {
             ctx.beginPath(); ctx.moveTo(w.x1, w.y1); ctx.lineTo(w.x2, w.y2); ctx.stroke();
         });
 
         // Slingshots
         this.slingshots.forEach(s => {
-            ctx.strokeStyle = s.active > 0 ? 'white' : 'var(--neon-blue)';
-            ctx.lineWidth = 3;
+            ctx.strokeStyle = s.active > 0 ? 'white' : '#00f2ff';
+            ctx.shadowBlur = s.active > 0 ? 15 : 0;
+            ctx.shadowColor = '#00f2ff';
+            ctx.lineWidth = 4;
             ctx.beginPath(); ctx.moveTo(s.x1, s.y1); ctx.lineTo(s.x2, s.y2); ctx.stroke();
+            ctx.shadowBlur = 0;
         });
 
         // Lanes
         this.lanes.forEach(l => {
-            ctx.fillStyle = l.hit ? l.color : '#222';
-            ctx.fillRect(l.x, l.y, l.w, l.h);
-            ctx.shadowBlur = l.hit ? 10 : 0;
+            ctx.fillStyle = l.hit ? l.color : '#111';
+            ctx.shadowBlur = l.hit ? 15 : 0;
             ctx.shadowColor = l.color;
+            ctx.fillRect(l.x, l.y, l.w, l.h);
+            ctx.shadowBlur = 0;
         });
 
-        // Bumper
+        // Bumpers
         this.bumpers.forEach(b => {
-            const pulseSize = b.pulse ? b.pulse/2 : 0;
+            const pulseSize = b.pulse ? b.pulse/1.5 : 0;
             ctx.fillStyle = b.color;
-            ctx.shadowBlur = 15 + pulseSize;
+            ctx.shadowBlur = 20 + pulseSize;
             ctx.shadowColor = b.color;
             ctx.beginPath(); ctx.arc(b.x, b.y, b.r + pulseSize, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.beginPath(); ctx.arc(b.x, b.y, (b.r + pulseSize)*0.7, 0, Math.PI*2); ctx.fill();
             ctx.shadowBlur = 0;
         });
 
         // Targets
         this.targets.forEach(t => {
             if(!t.active) return;
-            ctx.fillStyle = 'var(--neon-green)';
-            ctx.shadowBlur = 10; ctx.shadowColor = 'var(--neon-green)';
+            ctx.fillStyle = '#39ff14';
+            ctx.shadowBlur = 10; ctx.shadowColor = '#39ff14';
             ctx.fillRect(t.x, t.y, t.w, t.h);
             ctx.shadowBlur = 0;
         });
@@ -456,9 +473,9 @@ class PinballGame {
         // Flipper
         ctx.lineCap = 'round';
         this.flippers.forEach(f => {
-            ctx.strokeStyle = 'var(--neon-blue)';
+            ctx.strokeStyle = '#00f2ff';
             ctx.lineWidth = f.width;
-            ctx.shadowBlur = 10; ctx.shadowColor = 'var(--neon-blue)';
+            ctx.shadowBlur = 12; ctx.shadowColor = '#00f2ff';
             ctx.beginPath();
             ctx.moveTo(f.x, f.y);
             ctx.lineTo(f.x + Math.cos(f.angle)*f.length, f.y + Math.sin(f.angle)*f.length);
@@ -467,13 +484,12 @@ class PinballGame {
         });
 
         // Ball
-        this.balls.forEach(ball => {
-            if(!ball.active) return;
+        if(this.ball.active) {
             ctx.fillStyle = '#fff';
             ctx.shadowBlur = 15; ctx.shadowColor = '#fff';
-            ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(this.ball.x, this.ball.y, BALL_RADIUS, 0, Math.PI*2); ctx.fill();
             ctx.shadowBlur = 0;
-        });
+        }
     }
 
     loop() {
