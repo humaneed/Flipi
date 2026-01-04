@@ -1,1218 +1,412 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
-  <meta name="theme-color" content="#4A7C91" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <title>Kidsneed – Premium Flipper</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
-
-  <style>
-    :root{
-      /* Kidsneed Tokens (aus deinem Homescreen kopiert/kompatibel) */
-      --s-1: 8px; --s-2: 16px; --s-3: 24px; --s-4: 32px; --s-5: 48px;
-      --radius-md: 16px; --radius-lg: 24px; --radius-xl: 28px;
-      --shadow-soft: 0 2px 10px rgba(45,42,38,.10);
-      --shadow-subtle: 0 1px 3px rgba(45,42,38,.06);
-
-      --bg-canvas: #F5F0E8;
-      --bg-card: #FFFFFF;
-      --bg-muted: #EDE8DC;
-
-      --ink-primary: #2D2A26;
-      --ink-secondary: #6B665C;
-      --ink-light: #9C9588;
-
-      --accent: #4A7C91;
-
-      --text-2xl: 24px;
-      --text-xl: 20px;
-      --text-md: 16px;
-      --text-sm: 14px;
-      --text-xs: 12px;
-
-      --motion-fast: 150ms;
-      --motion-base: 260ms;
-      --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
-
-      --app-max-w: 560px;
-      --font: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body { height: 100%; }
-    body{
-      margin:0;
-      background: var(--bg-canvas);
-      color: var(--ink-primary);
-      font-family: var(--font);
-      font-weight: 600;
-      font-size: var(--text-md);
-      line-height: 1.5;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      overflow:hidden;
-      touch-action:none;
-      overscroll-behavior:none;
-    }
-
-    *:focus-visible {
-      outline: 3px solid var(--accent);
-      outline-offset: 2px;
-      border-radius: 12px;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
-    }
-
-    #app-frame{
-      width:100%;
-      height:100%;
-      background: var(--bg-card);
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
-      position:relative;
-    }
-
-    @media (min-width: 520px){
-      body{ padding: var(--s-3); }
-      #app-frame{
-        max-width: var(--app-max-w);
-        height: 94dvh;
-        max-height: 920px;
-        border: 3px solid var(--ink-primary);
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-subtle);
-      }
-    }
-
-    header{
-      height:72px;
-      padding: 0 var(--s-3);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: var(--s-2);
-      border-bottom: 3px solid var(--ink-primary);
-      background: var(--bg-card);
-      flex: 0 0 auto;
-    }
-
-    .brand{ display:flex; flex-direction:column; gap:2px; min-width:0; }
-    .brand-title{
-      font-size: var(--text-xl);
-      font-weight: 900;
-      letter-spacing: -0.02em;
-      line-height: 1.1;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .brand-subtitle{
-      font-size: var(--text-xs);
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 0.10em;
-      color: var(--ink-secondary);
-    }
-
-    .top-actions{ display:flex; gap: var(--s-2); align-items:center; }
-
-    .pill{
-      min-height: 48px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 2px solid var(--ink-primary);
-      background: var(--bg-muted);
-      display:flex;
-      align-items:center;
-      gap:8px;
-      user-select:none;
-      cursor:pointer;
-      transition: transform var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out);
-      white-space:nowrap;
-    }
-    .pill:hover{ box-shadow: var(--shadow-soft); transform: translateY(-1px); }
-    .pill:active{ transform: scale(0.98); box-shadow:none; }
-    .pill .icon{ font-size:18px; }
-    .pill .val{ font-weight: 900; font-size: var(--text-sm); }
-    .pill .lab{ font-weight: 900; font-size: var(--text-xs); color: var(--ink-secondary); text-transform:uppercase; letter-spacing:.10em; }
-
-    main{
-      flex:1;
-      position:relative;
-      background:
-        radial-gradient(1200px 340px at 50% 0%, rgba(74,124,145,.10), transparent 60%),
-        var(--bg-card);
-      padding: var(--s-3);
-      overflow:hidden;
-    }
-
-    .board{
-      position:absolute;
-      inset: var(--s-3);
-      border: 3px solid var(--ink-primary);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-subtle);
-      background: linear-gradient(180deg, rgba(237,232,220,.55), rgba(255,255,255,1));
-      overflow:hidden;
-    }
-
-    canvas{
-      width:100%;
-      height:100%;
-      display:block;
-      touch-action:none;
-    }
-
-    .touchZones{
-      position:absolute;
-      inset:0;
-      display:flex;
-      pointer-events:auto;
-    }
-    .zone{
-      flex:1;
-      background: transparent;
-      user-select:none;
-      -webkit-user-select:none;
-      touch-action:none;
-    }
-
-    .hud{
-      position:absolute;
-      left: 18px;
-      right: 18px;
-      bottom: 18px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: var(--s-2);
-      pointer-events:none;
-    }
-
-    .hudCard{
-      pointer-events:none;
-      background: rgba(255,255,255,.78);
-      backdrop-filter: blur(10px);
-      border: 2px solid rgba(45,42,38,.20);
-      border-radius: 16px;
-      padding: 10px 12px;
-      box-shadow: var(--shadow-subtle);
-      display:flex;
-      gap:10px;
-      align-items:center;
-      min-width: 160px;
-    }
-
-    .hudBig{
-      font-weight: 900;
-      letter-spacing: -0.01em;
-      font-size: 16px;
-    }
-    .hudSmall{
-      font-weight: 900;
-      font-size: 12px;
-      color: var(--ink-secondary);
-      text-transform: uppercase;
-      letter-spacing: .10em;
-    }
-
-    .toast{
-      position:absolute;
-      left:50%;
-      top: 18px;
-      transform: translateX(-50%) translateY(-6px);
-      padding: 10px 14px;
-      border-radius: 999px;
-      background: rgba(45,42,38,.90);
-      color: white;
-      font-weight: 900;
-      letter-spacing: .2px;
-      opacity:0;
-      transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
-      pointer-events:none;
-      box-shadow: 0 10px 30px rgba(0,0,0,.18);
-      white-space:nowrap;
-    }
-    .toast.show{
-      opacity:1;
-      transform: translateX(-50%) translateY(0);
-    }
-
-    .overlay{
-      position:absolute;
-      inset:0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding: var(--s-3);
-      background: rgba(245,240,232,.70);
-      backdrop-filter: blur(6px);
-    }
-    .overlayCard{
-      width:min(420px, 100%);
-      border: 3px solid var(--ink-primary);
-      border-radius: var(--radius-xl);
-      background: var(--bg-card);
-      box-shadow: var(--shadow-soft);
-      padding: var(--s-3);
-    }
-    .overlayTitle{
-      margin: 0 0 var(--s-2);
-      font-size: var(--text-xl);
-      font-weight: 900;
-      letter-spacing: -0.02em;
-    }
-    .row{
-      display:flex;
-      gap: var(--s-2);
-      align-items:center;
-      justify-content:space-between;
-      margin: var(--s-2) 0;
-    }
-    .toggle{
-      display:flex; gap:10px; align-items:center;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 2px solid var(--ink-primary);
-      background: var(--bg-muted);
-      font-weight: 900;
-      cursor:pointer;
-      user-select:none;
-    }
-    .btn{
-      border: 2px solid var(--ink-primary);
-      background: var(--bg-muted);
-      border-radius: 12px;
-      padding: 10px 12px;
-      font-weight: 900;
-      cursor:pointer;
-      transition: transform var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out);
-      user-select:none;
-    }
-    .btn:hover{ box-shadow: var(--shadow-soft); transform: translateY(-1px); }
-    .btn:active{ transform: scale(0.98); box-shadow:none; }
-    .note{
-      margin: var(--s-2) 0 0;
-      color: var(--ink-secondary);
-      font-weight: 800;
-      font-size: var(--text-sm);
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Neon Pinball Mobile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --neon-cyan: #0ff;
+            --neon-magenta: #f0f;
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050508;
+            font-family: system-ui, -apple-system, sans-serif;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100dvh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        canvas {
+            background: radial-gradient(circle at center, #1a1a2e 0%, #050508 100%);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.15);
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        .ui-overlay {
+            position: absolute;
+            top: calc(10px + env(safe-area-inset-top));
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--neon-cyan);
+            text-shadow: 0 0 8px var(--neon-cyan);
+            font-weight: 800;
+            pointer-events: none;
+            display: flex;
+            gap: 30px;
+            z-index: 10;
+            font-size: 1.2rem;
+            width: 100%;
+            justify-content: center;
+        }
+        .message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid var(--neon-cyan);
+            color: #fff;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            display: none;
+            z-index: 100;
+            width: 80%;
+            max-width: 320px;
+            backdrop-filter: blur(5px);
+        }
+        button {
+            background: var(--neon-cyan);
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            margin-top: 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px var(--neon-cyan);
+        }
+        .touch-hint {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            opacity: 0.3;
+            pointer-events: none;
+            color: white;
+            font-size: 0.8rem;
+        }
+    </style>
 </head>
-
 <body>
-  <div id="app-frame">
-    <header>
-      <div class="brand">
-        <div class="brand-title">Premium Flipper</div>
-        <div class="brand-subtitle">Kidsneed Arcade</div>
-      </div>
 
-      <div class="top-actions">
-        <div class="pill" id="pillTarget" title="Ziel / Summe">
-          <span class="icon">🎯</span>
-          <span class="lab">Ziel</span><span class="val" id="targetLbl">10</span>
-          <span style="opacity:.35; font-weight:900;">·</span>
-          <span class="lab">Summe</span><span class="val" id="sumLbl">0</span>
-        </div>
+<div id="game-container">
+    <div class="ui-overlay">
+        <div>SCORE: <span id="score">0</span></div>
+        <div>LIVES: <span id="lives">3</span></div>
+    </div>
 
-        <div class="pill" id="pillScore" title="Score">
-          <span class="icon">⭐</span>
-          <span class="val" id="scoreLbl">0</span>
-        </div>
+    <div id="message-box" class="message-box">
+        <h2 id="msg-title" class="text-3xl mb-2 font-black">GAME OVER</h2>
+        <p id="msg-text" class="text-lg opacity-80">Dein Score: 0</p>
+        <button onclick="resetGame()">NEUSTART</button>
+    </div>
 
-        <div class="pill" id="pillMenu" title="Pause / Menü">
-          <span class="icon">⏸</span>
-          <span class="val">Menü</span>
-        </div>
-      </div>
-    </header>
-
-    <main>
-      <div class="board" id="board">
-        <canvas id="c"></canvas>
-
-        <div class="toast" id="toast">JACKPOT!</div>
-
-        <!-- Touch-Zonen: links/rechts halten => Flipper. Rechts halten im Plunger => Laden -->
-        <div class="touchZones" aria-hidden="true">
-          <div class="zone" id="zoneL"></div>
-          <div class="zone" id="zoneR"></div>
-        </div>
-
-        <div class="hud" aria-hidden="true">
-          <div class="hudCard">
-            <div>
-              <div class="hudSmall">Multiplier</div>
-              <div class="hudBig">x<span id="multLbl">1</span></div>
-            </div>
-            <div style="width:1px; height:28px; background:rgba(45,42,38,.18);"></div>
-            <div>
-              <div class="hudSmall">Lives</div>
-              <div class="hudBig">❤ <span id="livesLbl">3</span></div>
-            </div>
-          </div>
-
-          <div class="hudCard" style="min-width:auto;">
-            <div>
-              <div class="hudSmall">Hint</div>
-              <div class="hudBig" id="hintLbl" style="font-size:13px;">Halte links/rechts · rechts im Plunger = Laden</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="overlay" id="overlay">
-          <div class="overlayCard">
-            <h2 class="overlayTitle">Menü</h2>
-
-            <div class="row">
-              <div style="font-weight:900;">Sound</div>
-              <div class="toggle" id="toggleSound"><span class="icon">🔊</span><span id="soundLbl">An</span></div>
-            </div>
-
-            <div class="row">
-              <div style="font-weight:900;">Vibration</div>
-              <div class="toggle" id="toggleHaptic"><span class="icon">📳</span><span id="hapticLbl">An</span></div>
-            </div>
-
-            <div class="row">
-              <button class="btn" id="btnRestart">Neu starten</button>
-              <button class="btn" id="btnBack">Zurück</button>
-              <button class="btn" id="btnClose">Weiter</button>
-            </div>
-
-            <p class="note">
-              Steuerung: <b>Links/Rechts halten</b> = Flipper. Ball startet im Plunger rechts unten:
-              <b>rechts halten</b> lädt, <b>loslassen</b> schießt.
-              Desktop: <b>A</b>/<b>L</b oder <b>←</b>/<b>→</b.
-            </p>
-          </div>
-        </div>
-
-      </div>
-    </main>
-  </div>
+    <canvas id="pinballCanvas"></canvas>
+    
+    <div class="touch-hint">
+        <span>⬅ FLIPPER</span>
+        <span>FLIPPER ➡</span>
+    </div>
+</div>
 
 <script>
-(() => {
-  "use strict";
+/**
+ * MOBILE OPTIMIZED PINBALL - FIXED PHYSICS NORMALS
+ */
 
-  // =========================
-  // Premium Flipper (v1.0) – Single-File, ohne Libs
-  // =========================
+const canvas = document.getElementById('pinballCanvas');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const livesEl = document.getElementById('lives');
+const messageBox = document.getElementById('message-box');
+const msgTitle = document.getElementById('msg-title');
+const msgText = document.getElementById('msg-text');
 
-  const CONFIG = {
-    // Smart-Ziel (minimal smart, wirkt direkt „Premium“)
-    targetCycle: [10, 12, 15],  // nach Jackpot wird weitergeschaltet
-    bumperChips: [1, 2, 3],     // 3 Bumper geben Chips
-    orbitChip: 5,               // seltenes Orbit-Gate
+const WIDTH = 400;
+const HEIGHT = 600;
 
-    // Physik
-    gravity: 1150,
-    airFriction: 0.996,
-    wallRestitution: 0.92,
-    bumperRestitution: 0.985,
-    slingBoost: 1.08,
-    maxSpeed: 1850,
+function setupCanvas() {
+    const scale = window.devicePixelRatio || 1;
+    canvas.style.width = '400px';
+    canvas.style.height = '600px';
+    canvas.width = WIDTH * scale;
+    canvas.height = HEIGHT * scale;
+    ctx.scale(scale, scale);
+}
 
-    // Ball
-    ballRadius: 10,
-    lives: 3,
+setupCanvas();
 
-    // Flipper
-    flipperLength: 94,
-    flipperThickness: 12,
-    flipperSnap: 20,
-    flipperRestAngle: 0.60,   // rad
-    flipperUpAngle: -0.70,    // rad
-    flipperImpulse: 520,      // zusätzlicher Kick
+const GRAVITY = 0.35;
+const FRICTION = 0.99;
+const MAX_SPEED = 18;
 
-    // Plunger
-    plungerChargePerSec: 1050,
-    plungerMax: 1600,
-    plungerMinLaunch: 80,
+let score = 0;
+let lives = 3;
+let gameOver = false;
 
-    // Scores
-    hitScore: 40,
-    bumperScore: 90,
-    orbitScore: 260,
-    targetScore: 120,
-    jackpotBase: 700,
+const keys = { left: false, right: false };
 
-    // Regeln
-    softBust: true,           // Summe > Ziel => Ziel-1 (statt 0)
-    multMax: 5,
+let ball = {
+    x: WIDTH - 25,
+    y: HEIGHT - 50,
+    vx: 0,
+    vy: 0,
+    radius: 9,
+    color: '#fff'
+};
 
-    // Komfort
-    ballSaveSec: 1.4,         // nach Launch kein sofortiges Drain
-  };
+const flippers = [
+    { side: 'left', x: WIDTH / 2 - 85, y: HEIGHT - 100, length: 75, angle: 0.5, baseAngle: 0.5, targetAngle: -0.6, isUp: false, width: 12 },
+    { side: 'right', x: WIDTH / 2 + 85, y: HEIGHT - 100, length: 75, angle: Math.PI - 0.5, baseAngle: Math.PI - 0.5, targetAngle: Math.PI + 0.6, isUp: false, width: 12 }
+];
 
-  // DOM
-  const canvas = document.getElementById("c");
-  const boardEl = document.getElementById("board");
-  const zoneL = document.getElementById("zoneL");
-  const zoneR = document.getElementById("zoneR");
+const bumpers = [
+    { x: 100, y: 160, radius: 25, color: '#f0f', points: 100, pulse: 0 },
+    { x: 300, y: 160, radius: 25, color: '#f0f', points: 100, pulse: 0 },
+    { x: 200, y: 260, radius: 32, color: '#0ff', points: 250, pulse: 0 },
+    { x: 60, y: 360, radius: 22, color: '#ff0', points: 50, pulse: 0 },
+    { x: 340, y: 360, radius: 22, color: '#ff0', points: 50, pulse: 0 }
+];
 
-  const targetLbl = document.getElementById("targetLbl");
-  const sumLbl = document.getElementById("sumLbl");
-  const scoreLbl = document.getElementById("scoreLbl");
-  const multLbl = document.getElementById("multLbl");
-  const livesLbl = document.getElementById("livesLbl");
-  const hintLbl = document.getElementById("hintLbl");
-  const toast = document.getElementById("toast");
+const walls = [
+    { x1: 0, y1: 0, x2: WIDTH, y2: 0 }, // Decke
+    { x1: 0, y1: 0, x2: 0, y2: HEIGHT }, // Links
+    { x1: WIDTH, y1: 0, x2: WIDTH, y2: HEIGHT }, // Rechts
+    { x1: 0, y1: HEIGHT - 180, x2: WIDTH/2 - 85, y2: HEIGHT - 100 }, // Schräge Links
+    { x1: WIDTH, y1: HEIGHT - 180, x2: WIDTH/2 + 85, y2: HEIGHT - 100 }, // Schräge Rechts
+    { x1: WIDTH - 50, y1: HEIGHT, x2: WIDTH - 50, y2: 120 }, // Plunger Wand
+    { x1: WIDTH - 50, y1: HEIGHT - 5, x2: WIDTH, y2: HEIGHT - 5 } // Plunger Boden
+];
 
-  const overlay = document.getElementById("overlay");
-  const pillMenu = document.getElementById("pillMenu");
-  const btnClose = document.getElementById("btnClose");
-  const btnRestart = document.getElementById("btnRestart");
-  const btnBack = document.getElementById("btnBack");
-  const toggleSound = document.getElementById("toggleSound");
-  const toggleHaptic = document.getElementById("toggleHaptic");
-  const soundLbl = document.getElementById("soundLbl");
-  const hapticLbl = document.getElementById("hapticLbl");
+// Input Handling
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') keys.left = true;
+    if (e.key === 'ArrowRight') keys.right = true;
+    if (e.key === ' ' && !gameOver) launchBall();
+});
+window.addEventListener('keyup', (e) => {
+    if (e.key === 'ArrowLeft') keys.left = false;
+    if (e.key === 'ArrowRight') keys.right = false;
+});
 
-  // Canvas
-  const ctx = canvas.getContext("2d");
-  let W = 0, H = 0, DPR = 1;
-
-  // State
-  let score = 0;
-  let mult = 1;
-  let lives = CONFIG.lives;
-  let sum = 0;
-  let targetIndex = 0;
-  let target = CONFIG.targetCycle[targetIndex];
-
-  let paused = false;
-
-  // Settings
-  let soundOn = true;
-  let hapticOn = true;
-
-  // Audio (minimal, synthetisch)
-  let audioCtx = null;
-  function beep(type="tap", strength=1){
-    if (!soundOn) return;
-    try{
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const t0 = audioCtx.currentTime;
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      o.connect(g); g.connect(audioCtx.destination);
-
-      const base = (type==="bumper") ? 520 : (type==="jackpot") ? 740 : (type==="orbit") ? 640 : (type==="oops") ? 220 : 420;
-      o.type = (type==="oops") ? "triangle" : "sine";
-      o.frequency.setValueAtTime(base, t0);
-      o.frequency.exponentialRampToValueAtTime(base*1.15, t0+0.03);
-
-      const amp = 0.04 * strength;
-      g.gain.setValueAtTime(amp, t0);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0+0.08);
-
-      o.start(t0);
-      o.stop(t0+0.09);
-    }catch(_){}
-  }
-
-  function haptic(ms=12){
-    if (!hapticOn) return;
-    if (navigator.vibrate) navigator.vibrate(ms);
-  }
-
-  // Helpers
-  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
-  const hypot = (x,y)=>Math.sqrt(x*x+y*y);
-
-  function showToast(text){
-    toast.textContent = text;
-    toast.classList.add("show");
-    clearTimeout(showToast._t);
-    showToast._t = setTimeout(()=>toast.classList.remove("show"), 520);
-  }
-
-  function setTarget(i){
-    targetIndex = (i % CONFIG.targetCycle.length + CONFIG.targetCycle.length) % CONFIG.targetCycle.length;
-    target = CONFIG.targetCycle[targetIndex];
-    targetLbl.textContent = String(target);
-  }
-
-  function updateHUD(){
-    scoreLbl.textContent = String(score);
-    multLbl.textContent = String(mult);
-    livesLbl.textContent = String(lives);
-    sumLbl.textContent = String(sum);
-    targetLbl.textContent = String(target);
-  }
-
-  function addChip(v){
-    sum += v;
-
-    if (sum === target){
-      // Jackpot
-      score += (CONFIG.jackpotBase * mult);
-      mult = clamp(mult + 1, 1, CONFIG.multMax);
-      sum = 0;
-      setTarget(targetIndex + 1);
-      showToast("JACKPOT!");
-      beep("jackpot", 1.2);
-      haptic(16);
-    } else if (sum > target){
-      // Soft-Bust
-      mult = clamp(mult - 1, 1, CONFIG.multMax);
-      if (CONFIG.softBust) sum = Math.max(0, target - 1);
-      else sum = 0;
-      showToast("Oops…");
-      beep("oops", 0.9);
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        const x = (t.clientX - rect.left) / rect.width;
+        if (x < 0.5) keys.left = true;
+        else keys.right = true;
+        if (ball.y > HEIGHT - 120) launchBall();
     }
+}, { passive: false });
 
-    updateHUD();
-  }
-
-  // Resize + Board build
-  const table = {
-    walls: [],       // segments
-    bumpers: [],     // circles
-    sensors: [],     // triggers
-    slings: [],      // segments with boost
-  };
-
-  function resize(){
-    const r = boardEl.getBoundingClientRect();
-    DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    W = Math.floor(r.width * DPR);
-    H = Math.floor(r.height * DPR);
-    canvas.width = W;
-    canvas.height = H;
-    buildTable();
-  }
-  window.addEventListener("resize", resize, {passive:true});
-
-  function seg(ax,ay,bx,by, kind="wall"){ return {ax,ay,bx,by, kind}; }
-  function circle(x,y,r, kind="bumper", chip=0){ return {x,y,r, kind, chip, glow:0}; }
-  function sensor(x,y,r, onHit, cooldown=0.25){ return {x,y,r, onHit, t:0, cd:cooldown}; }
-
-  function buildTable(){
-    table.walls.length = 0;
-    table.bumpers.length = 0;
-    table.sensors.length = 0;
-    table.slings.length = 0;
-
-    const pad = 24*DPR;
-    const left = pad, right = W-pad, top = pad, bottom = H-pad;
-
-    // Drain gap
-    const drainGap = 130*DPR;
-    const mid = W/2;
-
-    // Outer frame (top + sides + sloped bottom into drain)
-    table.walls.push(
-      seg(left, top, right, top),
-      seg(left, top, left, bottom-190*DPR),
-      seg(right, top, right, bottom-190*DPR),
-      seg(left, bottom-190*DPR, mid - drainGap/2, bottom),
-      seg(mid + drainGap/2, bottom, right, bottom-190*DPR),
-    );
-
-    // Plunger lane walls
-    const plA = W*0.80, plB = W*0.92;
-    table.walls.push(
-      seg(plA, bottom, plA, H*0.50),
-      seg(plB, bottom, plB, H*0.14),
-      seg(W*0.20, H*0.14, plB, H*0.14)
-    );
-
-    // Inlanes / Outlanes guides
-    table.walls.push(
-      seg(W*0.25, H*0.70, W*0.36, H*0.80),
-      seg(W*0.75, H*0.70, W*0.64, H*0.80),
-
-      seg(W*0.18, H*0.64, W*0.25, H*0.78),
-      seg(W*0.82, H*0.64, W*0.75, H*0.78)
-    );
-
-    // Simple mid ramps
-    table.walls.push(
-      seg(W*0.18, H*0.48, W*0.40, H*0.58),
-      seg(W*0.82, H*0.48, W*0.60, H*0.58)
-    );
-
-    // Slingshots (3 segments each)
-    // Left sling triangle
-    const ls1 = {x: W*0.20, y:H*0.70};
-    const ls2 = {x: W*0.34, y:H*0.80};
-    const ls3 = {x: W*0.24, y:H*0.86};
-    table.slings.push(
-      seg(ls1.x, ls1.y, ls2.x, ls2.y, "sling"),
-      seg(ls2.x, ls2.y, ls3.x, ls3.y, "sling"),
-      seg(ls3.x, ls3.y, ls1.x, ls1.y, "sling")
-    );
-
-    // Right sling triangle
-    const rs1 = {x: W*0.80, y:H*0.70};
-    const rs2 = {x: W*0.66, y:H*0.80};
-    const rs3 = {x: W*0.76, y:H*0.86};
-    table.slings.push(
-      seg(rs1.x, rs1.y, rs2.x, rs2.y, "sling"),
-      seg(rs2.x, rs2.y, rs3.x, rs3.y, "sling"),
-      seg(rs3.x, rs3.y, rs1.x, rs1.y, "sling")
-    );
-
-    // Bumpers (top cluster)
-    const br = 26*DPR;
-    table.bumpers.push(
-      circle(W*0.42, H*0.22, br, "bumper", CONFIG.bumperChips[0]),
-      circle(W*0.58, H*0.22, br, "bumper", CONFIG.bumperChips[1]),
-      circle(W*0.50, H*0.33, br+2*DPR, "bumper", CONFIG.bumperChips[2])
-    );
-
-    // Orbit gate sensor (oben rechts, selten)
-    table.sensors.push(sensor(W*0.86, H*0.18, 16*DPR, () => {
-      score += CONFIG.orbitScore * mult;
-      addChip(CONFIG.orbitChip);
-      showToast("Orbit +"+CONFIG.orbitChip);
-      beep("orbit", 1.0);
-    }, 0.70));
-
-    // Standup targets (2 Sensoren in mid)
-    table.sensors.push(sensor(W*0.34, H*0.44, 14*DPR, () => {
-      score += CONFIG.targetScore * mult;
-      addChip(1);
-      showToast("Target +1");
-      beep("tap", 0.9);
-    }, 0.35));
-
-    table.sensors.push(sensor(W*0.66, H*0.44, 14*DPR, () => {
-      score += CONFIG.targetScore * mult;
-      addChip(1);
-      showToast("Target +1");
-      beep("tap", 0.9);
-    }, 0.35));
-
-    // Inlanes sensors (klein, fühlt sich gut an)
-    table.sensors.push(sensor(W*0.38, H*0.84, 14*DPR, () => {
-      score += 80 * mult;
-      addChip(1);
-      beep("tap", 0.8);
-    }, 0.45));
-
-    table.sensors.push(sensor(W*0.62, H*0.84, 14*DPR, () => {
-      score += 80 * mult;
-      addChip(1);
-      beep("tap", 0.8);
-    }, 0.45));
-  }
-
-  // Ball + flippers
-  const ball = {
-    x: 0, y: 0,
-    vx: 0, vy: 0,
-    r: CONFIG.ballRadius * DPR,
-    inPlunger: true,
-    ballSaveT: 0
-  };
-
-  function resetBallToPlunger(){
-    ball.r = CONFIG.ballRadius * DPR;
-    ball.x = W*0.86;
-    ball.y = H*0.86;
-    ball.vx = 0;
-    ball.vy = 0;
-    ball.inPlunger = true;
-    plungerPower = 0;
-    ball.ballSaveT = 0;
-  }
-
-  const flL = { side:"L", px:0, py:0, len:0, angle:0, target:0, angVel:0 };
-  const flR = { side:"R", px:0, py:0, len:0, angle:0, target:0, angVel:0 };
-
-  function setupFlippers(){
-    flL.px = W*0.33; flL.py = H*0.86;
-    flR.px = W*0.67; flR.py = H*0.86;
-    flL.len = CONFIG.flipperLength * DPR;
-    flR.len = CONFIG.flipperLength * DPR;
-
-    flL.angle = -CONFIG.flipperRestAngle;
-    flR.angle = Math.PI + CONFIG.flipperRestAngle;
-    flL.target = flL.angle;
-    flR.target = flR.angle;
-  }
-
-  function flipperSegment(f){
-    const ax = f.px, ay = f.py;
-    const bx = ax + Math.cos(f.angle) * f.len;
-    const by = ay + Math.sin(f.angle) * f.len;
-    return {ax,ay,bx,by};
-  }
-
-  // Collisions
-  function closestPointOnSegment(px,py, ax,ay, bx,by){
-    const abx = bx-ax, aby = by-ay;
-    const apx = px-ax, apy = py-ay;
-    const ab2 = abx*abx + aby*aby || 1;
-    const t = clamp((apx*abx + apy*aby)/ab2, 0, 1);
-    return { x: ax + abx*t, y: ay + aby*t, t };
-  }
-
-  function reflect(vx,vy, nx,ny, rest){
-    const dot = vx*nx + vy*ny;
-    return { vx: vx - (1+rest)*dot*nx, vy: vy - (1+rest)*dot*ny };
-  }
-
-  function collideBallWithSegment(s, rest, extraBoost=1){
-    const cp = closestPointOnSegment(ball.x, ball.y, s.ax,s.ay, s.bx,s.by);
-    const dx = ball.x - cp.x, dy = ball.y - cp.y;
-    const dist = Math.sqrt(dx*dx + dy*dy) || 0.0001;
-    const overlap = ball.r - dist;
-    if (overlap > 0){
-      const nx = dx/dist, ny = dy/dist;
-      ball.x += nx * overlap;
-      ball.y += ny * overlap;
-
-      const dot = ball.vx*nx + ball.vy*ny;
-      if (dot < 0){
-        const r = reflect(ball.vx, ball.vy, nx, ny, rest);
-        ball.vx = r.vx * extraBoost;
-        ball.vy = r.vy * extraBoost;
-        return true;
-      }
+canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    let stillLeft = false; let stillRight = false;
+    for (let i = 0; i < e.touches.length; i++) {
+        const t = e.touches[i];
+        const x = (t.clientX - rect.left) / rect.width;
+        if (x < 0.5) stillLeft = true;
+        else stillRight = true;
     }
-    return false;
-  }
+    keys.left = stillLeft;
+    keys.right = stillRight;
+}, { passive: false });
 
-  function collideBallWithCircle(c, rest, kick){
-    const dx = ball.x - c.x, dy = ball.y - c.y;
-    const dist = Math.sqrt(dx*dx + dy*dy) || 0.0001;
-    const minD = ball.r + c.r;
-    if (dist < minD){
-      const nx = dx/dist, ny = dy/dist;
-      const overlap = minD - dist;
-      ball.x += nx * overlap;
-      ball.y += ny * overlap;
-
-      const dot = ball.vx*nx + ball.vy*ny;
-      if (dot < 0){
-        const r = reflect(ball.vx, ball.vy, nx, ny, rest);
-        ball.vx = r.vx + nx*kick;
-        ball.vy = r.vy + ny*kick;
-        return true;
-      }
+function launchBall() {
+    // Nur abschießen, wenn der Ball im Plunger-Kanal ist
+    if (ball.y > HEIGHT - 120 && ball.x > WIDTH - 55) {
+        ball.vy = -24;
+        ball.vx = (Math.random() - 0.5) * 2;
     }
-    return false;
-  }
+}
 
-  // Input
-  let holdL = false, holdR = false;
-  let plungerPower = 0;
-
-  function bindHold(el, setter){
-    const down = (e)=>{ e.preventDefault(); setter(true); };
-    const up = (e)=>{ e.preventDefault(); setter(false); };
-    el.addEventListener("pointerdown", down);
-    el.addEventListener("pointerup", up);
-    el.addEventListener("pointercancel", up);
-    el.addEventListener("pointerleave", up);
-  }
-  bindHold(zoneL, (v)=>holdL=v);
-  bindHold(zoneR, (v)=>holdR=v);
-
-  // Keyboard
-  window.addEventListener("keydown", (e)=>{
-    if (e.repeat) return;
-    if (e.key==="a" || e.key==="ArrowLeft") holdL = true;
-    if (e.key==="l" || e.key==="ArrowRight") holdR = true;
-    if (e.key==="Escape") toggleMenu(true);
-  });
-  window.addEventListener("keyup", (e)=>{
-    if (e.key==="a" || e.key==="ArrowLeft") holdL = false;
-    if (e.key==="l" || e.key==="ArrowRight") holdR = false;
-  });
-
-  // Menu
-  function toggleMenu(force){
-    paused = (typeof force === "boolean") ? force : !paused;
-    overlay.style.display = paused ? "flex" : "none";
-  }
-  pillMenu.addEventListener("click", ()=>toggleMenu());
-  btnClose.addEventListener("click", ()=>toggleMenu(false));
-  btnRestart.addEventListener("click", ()=>{ restartGame(); toggleMenu(false); });
-  btnBack.addEventListener("click", ()=>{
-    // Back: wenn History leer, dann zu index.html
-    if (history.length > 1) history.back();
-    else location.href = "index.html";
-  });
-
-  function setToggleUI(){
-    soundLbl.textContent = soundOn ? "An" : "Aus";
-    hapticLbl.textContent = hapticOn ? "An" : "Aus";
-    toggleSound.querySelector(".icon").textContent = soundOn ? "🔊" : "🔈";
-    toggleHaptic.querySelector(".icon").textContent = hapticOn ? "📳" : "🚫";
-  }
-  toggleSound.addEventListener("click", ()=>{ soundOn=!soundOn; setToggleUI(); beep("tap",0.7); });
-  toggleHaptic.addEventListener("click", ()=>{ hapticOn=!hapticOn; setToggleUI(); if (hapticOn) haptic(10); });
-  setToggleUI();
-
-  // Game control
-  function restartGame(){
-    score = 0;
-    mult = 1;
-    lives = CONFIG.lives;
-    sum = 0;
-    setTarget(0);
-    updateHUD();
-    resetBallToPlunger();
-    showToast("Neu gestartet");
-  }
-
-  // Loop (fixed timestep)
-  let last = performance.now();
-  let acc = 0;
-  const STEP = 1/120;
-
-  function step(dt){
-    // Update sensors timers
-    for (const s of table.sensors) s.t = Math.max(0, s.t - dt);
-
-    // Flippers target angles
-    const restL = -CONFIG.flipperRestAngle;
-    const upL   = -CONFIG.flipperUpAngle;
-    const restR = Math.PI + CONFIG.flipperRestAngle;
-    const upR   = Math.PI + CONFIG.flipperUpAngle;
-
-    flL.target = holdL ? upL : restL;
-    flR.target = holdR ? upR : restR;
-
-    // Smooth move
-    const move = (f)=>{
-      const prev = f.angle;
-      const k = CONFIG.flipperSnap;
-      f.angle += (f.target - f.angle) * clamp(k*dt, 0, 1);
-      f.angVel = (f.angle - prev) / dt;
-    };
-    move(flL); move(flR);
-
-    // Plunger
-    if (ball.inPlunger){
-      ball.x = W*0.86;
-      ball.y = clamp(ball.y, H*0.72, H*0.90);
-
-      if (holdR){
-        plungerPower = clamp(plungerPower + CONFIG.plungerChargePerSec*dt, 0, CONFIG.plungerMax);
-        hintLbl.textContent = "Loslassen = Abschuss (" + Math.round(plungerPower/50)*50 + ")";
-      } else {
-        hintLbl.textContent = "Halte links/rechts · rechts im Plunger = Laden";
-        if (plungerPower > CONFIG.plungerMinLaunch){
-          // launch
-          ball.inPlunger = false;
-          ball.vx = 0;
-          ball.vy = -plungerPower * DPR;
-          plungerPower = 0;
-          ball.ballSaveT = CONFIG.ballSaveSec;
-          beep("tap",0.8);
-        }
-      }
+function resetBall() {
+    lives--;
+    livesEl.innerText = lives;
+    if (lives <= 0) endGame();
+    else {
+        ball.x = WIDTH - 25;
+        ball.y = HEIGHT - 60;
+        ball.vx = 0;
+        ball.vy = 0;
     }
+}
 
-    // Physics
-    if (!ball.inPlunger){
-      // integrate
-      ball.vy += CONFIG.gravity * dt * DPR;
-      ball.x += ball.vx * dt;
-      ball.y += ball.vy * dt;
+function endGame() {
+    gameOver = true;
+    msgTitle.innerText = "SPIEL VORBEI";
+    msgText.innerText = "Dein Score: " + score;
+    messageBox.style.display = 'block';
+}
 
-      // friction
-      ball.vx *= CONFIG.airFriction;
-      ball.vy *= CONFIG.airFriction;
+function resetGame() {
+    score = 0; scoreEl.innerText = score;
+    lives = 3; livesEl.innerText = lives;
+    gameOver = false;
+    messageBox.style.display = 'none';
+    ball.x = WIDTH - 25; ball.y = HEIGHT - 60;
+    ball.vx = 0; ball.vy = 0;
+}
 
-      // speed clamp
-      const sp = hypot(ball.vx, ball.vy);
-      const maxSp = CONFIG.maxSpeed * DPR;
-      if (sp > maxSp){
-        const s = maxSp / sp;
-        ball.vx *= s; ball.vy *= s;
-      }
+function distance(x1, y1, x2, y2) {
+    return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+}
 
-      // collide walls
-      for (const w of table.walls){
-        collideBallWithSegment(w, CONFIG.wallRestitution, 1);
-      }
+function update() {
+    if (gameOver) return;
 
-      // slings (extra boost)
-      for (const s of table.slings){
-        if (collideBallWithSegment(s, 0.96, CONFIG.slingBoost)){
-          score += CONFIG.hitScore * mult;
-          beep("tap",0.6);
-          updateHUD();
-        }
-      }
-
-      // flippers collision with impulse when moving up
-      const segL = flipperSegment(flL);
-      const segR = flipperSegment(flR);
-
-      // impulse based on angular velocity (premium feel)
-      const impL = Math.max(0, flL.angVel) * 2.6 * DPR;
-      const impR = Math.max(0, flR.angVel) * 2.6 * DPR;
-
-      if (collideBallWithSegment(segL, 0.88, 1)){
-        ball.vx += Math.cos(flL.angle) * CONFIG.flipperImpulse * 0.002 * impL;
-        ball.vy += Math.sin(flL.angle) * CONFIG.flipperImpulse * 0.002 * impL;
-        beep("tap",0.55);
-      }
-      if (collideBallWithSegment(segR, 0.88, 1)){
-        ball.vx += Math.cos(flR.angle) * CONFIG.flipperImpulse * 0.002 * impR;
-        ball.vy += Math.sin(flR.angle) * CONFIG.flipperImpulse * 0.002 * impR;
-        beep("tap",0.55);
-      }
-
-      // bumpers
-      for (const b of table.bumpers){
-        if (collideBallWithCircle(b, CONFIG.bumperRestitution, 260*DPR)){
-          b.glow = 0.22;
-          score += CONFIG.bumperScore * mult;
-          addChip(b.chip);
-          beep("bumper", 0.9);
-          haptic(10);
-          updateHUD();
-        }
-      }
-
-      // sensors (orbit/targets/inlanes)
-      for (const s of table.sensors){
-        if (s.t > 0) continue;
-        const dx = ball.x - s.x, dy = ball.y - s.y;
-        if (dx*dx + dy*dy <= (ball.r + s.r) * (ball.r + s.r)){
-          s.t = s.cd;
-          s.onHit();
-          updateHUD();
-        }
-      }
-
-      // drain (bottom)
-      if (ball.y > H + 90*DPR){
-        if (ball.ballSaveT > 0){
-          // ball save
-          resetBallToPlunger();
-          showToast("Ball Save");
-          beep("tap",0.8);
-          return;
-        }
-        lives--;
-        mult = 1;
-        sum = 0;
-        updateHUD();
-        if (lives > 0){
-          showToast("Ball verloren");
-          beep("oops",0.9);
-          resetBallToPlunger();
+    // Flipper Rotation
+    flippers.forEach(f => {
+        const step = 0.5;
+        if (f.side === 'left') {
+            f.isUp = keys.left;
+            if (f.isUp) f.angle = Math.max(f.targetAngle, f.angle - step);
+            else f.angle = Math.min(f.baseAngle, f.angle + step * 0.4);
         } else {
-          showToast("Game Over");
-          beep("oops",1.0);
-          // Auto-Restart nach kurzer Zeit
-          setTimeout(restartGame, 650);
+            f.isUp = keys.right;
+            if (f.isUp) f.angle = Math.min(f.targetAngle, f.angle + step);
+            else f.angle = Math.max(f.baseAngle, f.angle - step * 0.4);
         }
-      }
+    });
 
-      // decrease ball save timer
-      ball.ballSaveT = Math.max(0, ball.ballSaveT - dt);
-    }
-  }
+    // Ball Bewegung
+    ball.vy += GRAVITY;
+    ball.vx *= FRICTION;
+    ball.vy *= FRICTION;
+    ball.x += ball.vx;
+    ball.y += ball.vy;
 
-  // Render
-  function draw(){
-    ctx.clearRect(0,0,W,H);
-
-    // background wash
-    const grad = ctx.createLinearGradient(0,0,0,H);
-    grad.addColorStop(0, "rgba(74,124,145,0.12)");
-    grad.addColorStop(1, "rgba(74,124,145,0.00)");
-    ctx.fillStyle = grad;
-    ctx.fillRect(0,0,W,H);
-
-    // subtle grid (premium, sehr leicht)
-    ctx.save();
-    ctx.globalAlpha = 0.06;
-    ctx.strokeStyle = "rgba(45,42,38,1)";
-    ctx.lineWidth = 1*DPR;
-    const step = 28*DPR;
-    for (let x=step; x<W; x+=step){
-      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
-    }
-    for (let y=step; y<H; y+=step){
-      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
-    }
-    ctx.restore();
-
-    // walls
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = "rgba(45,42,38,0.26)";
-    ctx.lineWidth = 10*DPR;
-    for (const w of table.walls){
-      ctx.beginPath();
-      ctx.moveTo(w.ax,w.ay);
-      ctx.lineTo(w.bx,w.by);
-      ctx.stroke();
+    // Speed Limit
+    const currentSpeed = Math.sqrt(ball.vx**2 + ball.vy**2);
+    if (currentSpeed > MAX_SPEED) {
+        ball.vx = (ball.vx / currentSpeed) * MAX_SPEED;
+        ball.vy = (ball.vy / currentSpeed) * MAX_SPEED;
     }
 
-    // slings
-    ctx.strokeStyle = "rgba(74,124,145,0.30)";
-    ctx.lineWidth = 10*DPR;
-    for (const s of table.slings){
-      ctx.beginPath();
-      ctx.moveTo(s.ax,s.ay);
-      ctx.lineTo(s.bx,s.by);
-      ctx.stroke();
-    }
+    // Wand Kollisionen
+    walls.forEach(w => {
+        const dx = w.x2 - w.x1;
+        const dy = w.y2 - w.y1;
+        const l2 = dx*dx + dy*dy;
+        if (l2 === 0) return;
+        let t = Math.max(0, Math.min(1, ((ball.x - w.x1) * dx + (ball.y - w.y1) * dy) / l2));
+        const nearestX = w.x1 + t * dx;
+        const nearestY = w.y1 + t * dy;
+        const dist = distance(ball.x, ball.y, nearestX, nearestY);
+        
+        if (dist < ball.radius) {
+            // Berechnung der Normalen vom nächsten Punkt zum Ball (Fixes the tunneling/push-out issue)
+            const nx = (ball.x - nearestX) / dist;
+            const ny = (ball.y - nearestY) / dist;
+            
+            // Reflektion basierend auf der Normalen
+            const dot = ball.vx * nx + ball.vy * ny;
+            ball.vx = (ball.vx - 2 * dot * nx) * 0.7;
+            ball.vy = (ball.vy - 2 * dot * ny) * 0.7;
+            
+            // Ball aus der Wand schieben
+            ball.x = nearestX + nx * ball.radius;
+            ball.y = nearestY + ny * ball.radius;
+        }
+    });
 
-    // bumpers
-    for (const b of table.bumpers){
-      b.glow = Math.max(0, b.glow - 0.012);
-      // glow ring
-      ctx.beginPath();
-      ctx.fillStyle = `rgba(74,124,145,${0.10 + b.glow})`;
-      ctx.arc(b.x,b.y,b.r+12*DPR,0,Math.PI*2);
-      ctx.fill();
+    // Bumper Kollisionen
+    bumpers.forEach(b => {
+        const dist = distance(ball.x, ball.y, b.x, b.y);
+        if (dist < ball.radius + b.radius) {
+            const angle = Math.atan2(ball.y - b.y, ball.x - b.x);
+            const force = 12;
+            ball.vx = Math.cos(angle) * force;
+            ball.vy = Math.sin(angle) * force;
+            score += b.points;
+            scoreEl.innerText = score;
+            b.pulse = 15;
+        }
+        if (b.pulse > 0) b.pulse -= 1;
+    });
 
-      // body
-      ctx.beginPath();
-      ctx.fillStyle = "rgba(255,255,255,0.92)";
-      ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
-      ctx.fill();
+    // Flipper Kollisionen
+    flippers.forEach(f => {
+        const endX = f.x + Math.cos(f.angle) * f.length;
+        const endY = f.y + Math.sin(f.angle) * f.length;
+        const dx = endX - f.x;
+        const dy = endY - f.y;
+        const l2 = dx*dx + dy*dy;
+        let t = Math.max(0, Math.min(1, ((ball.x - f.x) * dx + (ball.y - f.y) * dy) / l2));
+        const nearestX = f.x + t * dx;
+        const nearestY = f.y + t * dy;
+        const dist = distance(ball.x, ball.y, nearestX, nearestY);
 
-      ctx.lineWidth = 4*DPR;
-      ctx.strokeStyle = "rgba(45,42,38,0.22)";
-      ctx.stroke();
+        if (dist < ball.radius + f.width/2) {
+            const nx = (ball.x - nearestX) / dist;
+            const ny = (ball.y - nearestY) / dist;
+            const strength = f.isUp ? 16 : 4;
+            
+            ball.vx = nx * strength + (Math.random()-0.5)*2;
+            ball.vy = ny * strength;
+            ball.x = nearestX + nx * (ball.radius + f.width/2);
+            ball.y = nearestY + ny * (ball.radius + f.width/2);
+        }
+    });
 
-      ctx.fillStyle = "rgba(45,42,38,0.86)";
-      ctx.font = `${14*DPR}px Nunito`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("+"+b.chip, b.x, b.y);
-    }
+    // Ball im Aus
+    if (ball.y > HEIGHT + 50) resetBall();
+}
 
-    // sensors (very subtle dots)
-    ctx.save();
-    ctx.globalAlpha = 0.14;
-    ctx.fillStyle = "rgba(74,124,145,1)";
-    for (const s of table.sensors){
-      ctx.beginPath();
-      ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-      ctx.fill();
-    }
-    ctx.restore();
+function draw() {
+    ctx.clearRect(0, 0, WIDTH, HEIGHT);
+    ctx.strokeStyle = '#1e1e2e';
+    ctx.lineWidth = 4;
+    walls.forEach(w => {
+        ctx.beginPath(); ctx.moveTo(w.x1, w.y1); ctx.lineTo(w.x2, w.y2); ctx.stroke();
+    });
 
-    // flippers
-    drawFlipper(flL);
-    drawFlipper(flR);
+    bumpers.forEach(b => {
+        const r = b.radius + b.pulse;
+        ctx.shadowBlur = 15; ctx.shadowColor = b.color;
+        ctx.fillStyle = b.color;
+        ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+    });
 
-    // plunger lane indicator
-    ctx.save();
-    ctx.globalAlpha = 0.18;
-    ctx.fillStyle = "rgba(74,124,145,1)";
-    ctx.fillRect(W*0.80, H*0.52, (W*0.92 - W*0.80), H*0.38);
-    ctx.restore();
+    ctx.lineCap = 'round';
+    flippers.forEach(f => {
+        ctx.shadowBlur = 12; ctx.shadowColor = '#0ff';
+        ctx.strokeStyle = '#0ff'; ctx.lineWidth = f.width;
+        ctx.beginPath(); ctx.moveTo(f.x, f.y);
+        ctx.lineTo(f.x + Math.cos(f.angle) * f.length, f.y + Math.sin(f.angle) * f.length);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    });
 
-    // plunger power bar
-    if (ball.inPlunger && plungerPower > 0){
-      const frac = clamp(plungerPower/CONFIG.plungerMax, 0, 1);
-      ctx.save();
-      ctx.globalAlpha = 0.65;
-      ctx.fillStyle = "rgba(74,124,145,1)";
-      const barH = frac * (H*0.30);
-      ctx.fillRect(W*0.94, H*0.90 - barH, 8*DPR, barH);
-      ctx.restore();
-    }
+    ctx.shadowBlur = 10; ctx.shadowColor = '#0ff';
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
 
-    // ball
-    ctx.beginPath();
-    ctx.fillStyle = "rgba(255,255,255,0.95)";
-    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
-    ctx.fill();
+    requestAnimationFrame(() => {
+        update();
+        draw();
+    });
+}
 
-    ctx.lineWidth = 3*DPR;
-    ctx.strokeStyle = "rgba(45,42,38,0.22)";
-    ctx.stroke();
-
-    // ball save halo
-    if (!ball.inPlunger && ball.ballSaveT > 0){
-      ctx.save();
-      ctx.globalAlpha = 0.12;
-      ctx.strokeStyle = "rgba(74,124,145,1)";
-      ctx.lineWidth = 10*DPR;
-      ctx.beginPath();
-      ctx.arc(ball.x, ball.y, ball.r+10*DPR, 0, Math.PI*2);
-      ctx.stroke();
-      ctx.restore();
-    }
-  }
-
-  function drawFlipper(f){
-    const seg = flipperSegment(f);
-
-    // base
-    ctx.lineWidth = CONFIG.flipperThickness * DPR;
-    ctx.strokeStyle = "rgba(45,42,38,0.34)";
-    ctx.beginPath();
-    ctx.moveTo(seg.ax, seg.ay);
-    ctx.lineTo(seg.bx, seg.by);
-    ctx.stroke();
-
-    // highlight
-    ctx.lineWidth = (CONFIG.flipperThickness - 6) * DPR;
-    ctx.strokeStyle = "rgba(255,255,255,0.72)";
-    ctx.beginPath();
-    ctx.moveTo(seg.ax, seg.ay);
-    ctx.lineTo(seg.bx, seg.by);
-    ctx.stroke();
-  }
-
-  function frame(now){
-    const dt = Math.min(0.05, (now - last) / 1000);
-    last = now;
-
-    if (!paused){
-      acc += dt;
-      while (acc >= STEP){
-        step(STEP);
-        acc -= STEP;
-      }
-    }
-    draw();
-    requestAnimationFrame(frame);
-  }
-
-  // init
-  function init(){
-    resize();
-    setupFlippers();
-    setTarget(0);
-    restartGame();
-    requestAnimationFrame(frame);
-  }
-
-  window.addEventListener("resize", ()=>{
-    // after resize rebuild + reset positions to keep stable
-    resize();
-    setupFlippers();
-    resetBallToPlunger();
-  }, {passive:true});
-
-  // Prevent iOS scroll
-  document.addEventListener("touchmove", (e)=>e.preventDefault(), {passive:false});
-
-  init();
-
-})();
+window.addEventListener('resize', setupCanvas);
+window.onload = draw;
 </script>
 </body>
 </html>
